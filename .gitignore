@@ -16,6 +16,10 @@ out/
 
 # Node.js
 node_modules/
+package-lock.json
+
+# Merkle data
+whitelist-merkle-data.json
 
 # macOS
 .DS_Store

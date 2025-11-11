@@ -1,0 +1,26 @@
+{
+  "name": "ethpanda-nft",
+  "version": "1.0.0",
+  "description": "EthPanda NFT - ERC-1155 NFT collection with whitelist and public mint phases",
+  "scripts": {
+    "generate-merkle": "node scripts/generateMerkleTree.js",
+    "test": "forge test",
+    "build": "forge build",
+    "deploy:local": "forge script script/Deploy.s.sol:DeployScript --rpc-url http://localhost:8545 --broadcast",
+    "deploy:sepolia": "forge script script/Deploy.s.sol:DeployScript --rpc-url $SEPOLIA_RPC_URL --broadcast --verify"
+  },
+  "keywords": [
+    "nft",
+    "erc1155",
+    "ethereum",
+    "solidity",
+    "foundry"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "merkletreejs": "^0.3.11",
+    "keccak256": "^1.0.6"
+  }
+}
+
