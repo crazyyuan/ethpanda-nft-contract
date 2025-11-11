@@ -4,7 +4,13 @@
 
 ## 项目概述
 
-EthPanda NFT 是一个基于以太坊的 NFT 项目，使用 ERC-1155 标准，总供应量 10,000。项目采用两阶段铸造机制：白名单阶段（2天）和公开阶段（2天），**免费铸造**（只需支付 gas 费）。使用 Merkle Tree 实现 gas 优化的白名单验证，使用 OpenZeppelin AccessControl 实现**多管理员权限控制**。项目使用 OpenZeppelin 合约库构建，并采用 Foundry 作为开发和测试框架。
+EthPanda NFT 是一个基于以太坊的 NFT 项目，使用 ERC-1155 标准，总供应量 10,000 份（Token ID = 1）。项目采用两阶段铸造机制：白名单阶段（2天，每地址最多5个）和公开阶段（2天，每地址最多1个），**完全免费铸造**（用户只需支付 gas 费用）。
+
+技术亮点：
+- 使用 **Merkle Tree** 实现 gas 优化的白名单验证
+- 使用 **OpenZeppelin AccessControl** 实现灵活的多管理员权限控制
+- 支持永久结束铸造，防止意外增发
+- 基于 OpenZeppelin v5.1.0 合约库构建，采用 Foundry 作为开发和测试框架
 
 ## 技术栈
 
@@ -128,7 +134,7 @@ forge script script/Deploy.s.sol:DeployScript --rpc-url http://localhost:8545 --
 
 1. **未开始阶段 (NotStarted)**
    - 合约部署后的初始状态
-   - 只有所有者可以 mint
+   - 只有管理员可以通过 `adminMint()` 进行 mint
 
 2. **白名单阶段 (Whitelist) - 2 天**
    - 白名单用户可以 mint
@@ -282,6 +288,28 @@ CHECK_ADDRESS=0x... forge script script/Deploy.s.sol:QueryStatusScript \
   --rpc-url $SEPOLIA_RPC_URL
 ```
 
+## 合约参数
+
+### 核心常量
+
+```solidity
+TOKEN_ID = 1                           // NFT Token ID（固定值）
+MAX_SUPPLY = 10,000                    // 最大供应量
+WHITELIST_MAX_PER_ADDRESS = 5         // 白名单阶段每地址最大 mint 数量
+PUBLIC_MAX_PER_ADDRESS = 1            // 公开阶段每地址最大 mint 数量
+PHASE_DURATION = 2 days                // 每个阶段持续时间
+```
+
+### 部署参数
+
+在 `script/Deploy.s.sol` 中配置：
+
+```solidity
+NAME = "EthPanda NFT"                  // NFT 名称
+SYMBOL = "EPNFT"                       // NFT 符号
+BASE_URI = "https://api.ethpanda.io/metadata/"  // 元数据基础 URI
+```
+
 ## 合约功能
 
 ### 管理员功能
@@ -331,17 +359,23 @@ hasRole(bytes32 role, address account) → bool
 ### 用户功能
 
 ```solidity
-// 白名单 mint
-whitelistMint(uint256 amount, bytes32[] calldata merkleProof) payable
+// 白名单 mint（免费）
+whitelistMint(uint256 amount, bytes32[] calldata merkleProof)
 
-// 公开 mint
-publicMint(uint256 amount) payable
+// 公开 mint（免费）
+publicMint(uint256 amount)
 
 // 销毁 NFT
 burn(address account, uint256 tokenId, uint256 amount)
 
+// 批量销毁 NFT
+burnBatch(address account, uint256[] memory ids, uint256[] memory amounts)
+
 // 转账
 safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes data)
+
+// 批量转账
+safeBatchTransferFrom(address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes data)
 
 // 查询
 balanceOf(address account, uint256 id)
@@ -368,6 +402,14 @@ publicRemainingForAddress(address) → uint256
 
 // 批量验证白名单
 verifyWhitelist(address[] accounts, bytes32[][] proofs) → bool[]
+
+// ERC1155 标准接口
+balanceOfBatch(address[] accounts, uint256[] ids) → uint256[]
+isApprovedForAll(address account, address operator) → bool
+setApprovalForAll(address operator, bool approved)
+
+// ERC165 接口检查
+supportsInterface(bytes4 interfaceId) → bool
 ```
 
 ## 使用示例
@@ -387,7 +429,7 @@ const nft = new ethers.Contract(NFT_ADDRESS, ABI, signer);
 const phase = await nft.getCurrentPhase();
 // 0: NotStarted, 1: Whitelist, 2: Public, 3: Ended
 
-// 白名单 mint（免费）
+// 白名单 mint（免费，只需 gas）
 async function whitelistMint(amount) {
   const userAddress = await signer.getAddress();
   const proof = merkleData.proofs[userAddress];
@@ -396,16 +438,16 @@ async function whitelistMint(amount) {
     throw new Error('Address not in whitelist');
   }
   
+  // 免费 mint，不需要发送 ETH
   const tx = await nft.whitelistMint(amount, proof);
-  
   await tx.wait();
   console.log('Minted successfully!');
 }
 
-// 公开 mint（免费）
+// 公开 mint（免费，只需 gas）
 async function publicMint(amount) {
+  // 免费 mint，不需要发送 ETH
   const tx = await nft.publicMint(amount);
-  
   await tx.wait();
   console.log('Minted successfully!');
 }
@@ -417,6 +459,18 @@ console.log('User balance:', balance.toString());
 // 查询剩余可 mint 数量
 const remaining = await nft.remainingSupply();
 console.log('Remaining supply:', remaining.toString());
+
+// 批量验证白名单
+async function verifyMultipleAddresses(addresses) {
+  const proofs = addresses.map(addr => merkleData.proofs[addr] || []);
+  const results = await nft.verifyWhitelist(addresses, proofs);
+  
+  addresses.forEach((addr, i) => {
+    console.log(`${addr}: ${results[i] ? '✓ 在白名单' : '✗ 不在白名单'}`);
+  });
+  
+  return results;
+}
 ```
 
 ## 权限系统
@@ -458,20 +512,22 @@ console.log('Remaining supply:', remaining.toString());
 
 ## 测试覆盖
 
-项目包含全面的测试套件（30+ 测试用例）：
+项目包含全面的测试套件（45+ 测试用例）：
 
 - ✅ 合约初始化测试
+- ✅ AccessControl 权限测试（管理员添加/移除）
 - ✅ Merkle Root 设置和验证
 - ✅ 阶段转换测试
 - ✅ 白名单 mint（含 Merkle Proof 验证）
 - ✅ 公开 mint
 - ✅ 数量限制测试
 - ✅ 永久结束 mint 测试
-- ✅ 销毁功能测试
-- ✅ 权限控制测试
+- ✅ 销毁和转账功能测试
+- ✅ 管理员 mint 测试
+- ✅ 多管理员权限测试
 - ✅ 边界条件测试
 - ✅ Fuzz 测试
-- ✅ 完整流程测试
+- ✅ 完整流程集成测试
 
 运行测试：
 
@@ -510,10 +566,10 @@ A: 阶段持续时间（2天）是合约中的常量。如需更改，需要在�
 A: 可以，但只能 mint 1 个（公开阶段限制）。白名单和公开阶段的 mint 数量是分别计算的。
 
 **Q: 如果没有调用 `endMintPermanently()`，还能 mint 吗？**
-A: 不能。两个阶段结束后，合约会自动进入 Ended 状态，阻止普通 mint。但管理员仍可以调用 `adminMint()`，除非调用了 `endMintPermanently()`。
+A: 两个阶段结束后，合约会自动进入 Ended 状态，阻止普通用户 mint。但管理员仍可以调用 `adminMint()` 进行空投等操作，除非调用了 `endMintPermanently()`。
 
 **Q: `endMintPermanently()` 会实际销毁代币吗？**
-A: 不会实际销毁已 mint 的代币，只是将 `mintEnded` 标志设为 true，永久禁止所有 mint 操作（包括 `adminMint()`）。
+A: 不会销毁已经 mint 的代币（用户持有的 NFT 不受影响）。该函数只是将 `mintEnded` 标志设为 true，永久禁止所有 mint 操作（包括 `adminMint()`），确保总供应量不会再增加。
 
 **Q: 多管理员模式安全吗？**
 A: 是的。使用 OpenZeppelin AccessControl 实现，经过广泛审计。超级管理员（DEFAULT_ADMIN_ROLE）可以管理普通管理员（ADMIN_ROLE），确保权限可控。
@@ -523,6 +579,12 @@ A: 只有超级管理员可以通过 `addAdmin()` 和 `removeAdmin()` 函数添�
 
 **Q: 管理员和超级管理员有什么区别？**
 A: 超级管理员（DEFAULT_ADMIN_ROLE）可以管理管理员角色，而普通管理员（ADMIN_ROLE）只能执行合约管理操作（如开始 mint 阶段、设置白名单等），不能添加或移除其他管理员。
+
+**Q: 为什么使用 ERC-1155 而不是 ERC-721？**
+A: ERC-1155 支持批量操作，gas 效率更高。虽然本项目只使用单一 Token ID（ID=1），但可以充分利用 ERC-1155 的批量转账和查询功能，降低用户操作成本。
+
+**Q: Token ID 固定为 1，可以有多个 NFT 吗？**
+A: 可以。ERC-1155 是"多代币"标准，每个 Token ID 可以有多个份额。本项目使用 Token ID = 1，最多可以有 10,000 份（MAX_SUPPLY）。每个用户持有的是该 Token ID 的"份额"数量。
 
 ## 许可证
 
