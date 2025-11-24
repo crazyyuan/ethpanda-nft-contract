@@ -1,116 +1,118 @@
 # Memory of Ethereum NFT
 
-Memory of Ethereum（以太坊记忆）- 纪念以太坊每次重大升级的 NFT 集合，基于 ERC-1155 标准，支持多 Token 系列管理。
+[中文文档](./README_CN.md)
 
-## 🎯 项目概述
+Memory of Ethereum - A commemorative NFT collection for each major Ethereum upgrade, built on the ERC-1155 standard with multi-token series management.
 
-Memory of Ethereum 是一个创新的 NFT 项目，每次以太坊重大升级（如 Shapella, Dencun, Fusaka 等）都会发行一个独立的 NFT 系列。每个系列都是独立的 Token ID，拥有独立的配置、白名单和价格设置。
+## 🎯 Project Overview
 
-### 核心理念
+Memory of Ethereum is an innovative NFT project that releases a unique NFT series for each major Ethereum upgrade (such as Shapella, Dencun, Fusaka, etc.). Each series is an independent Token ID with its own configuration, whitelist, and pricing.
 
-- 🌟 **纪念意义**: 每个 NFT 代表一次以太坊的重大技术升级
-- 🎨 **独立系列**: 每次升级对应独立的 Token ID 和配置
-- 🔓 **灵活定价**: 支持免费或付费铸造，可针对不同阶段设置不同价格
-- 🛡️ **安全可靠**: 基于 OpenZeppelin v5.1.0 和 Foundry 构建
+### Core Concepts
 
-## 🚀 主要特性
+- 🌟 **Commemorative Significance**: Each NFT represents a major Ethereum technical upgrade
+- 🎨 **Independent Series**: Each upgrade has its own Token ID and configuration
+- 🔓 **Flexible Pricing**: Supports free or paid minting with different prices for different phases
+- 🛡️ **Secure & Reliable**: Built on OpenZeppelin v5.1.0 and Foundry
 
-### 核心功能
-- ✅ **多 Token 支持**: 每次以太坊升级创建新的 Token ID
-- ✅ **数据隔离**: 每个 Token 拥有独立的配置、白名单和用户记录
-- ✅ **灵活定价**: 支持免费/付费铸造，可针对白名单和公开阶段设置不同价格
-- ✅ **自动退款**: 用户支付多余的 ETH 会自动退还
-- ✅ **资金管理**: 管理员可提取合约收益
+## 🚀 Key Features
 
-### 铸造机制
-- 🎫 **白名单阶段**: 使用 Merkle Tree 验证，高效且 gas 优化
-- 🌍 **公开阶段**: 向所有人开放
-- 🎛️ **手动控制**: 管理员可随时开启/结束各阶段
-- 🔒 **永久结束**: 可永久禁止某个 Token 继续铸造
+### Core Functionality
+- ✅ **Multi-Token Support**: Create new Token ID for each Ethereum upgrade
+- ✅ **Data Isolation**: Each token has independent configuration, whitelist, and user records
+- ✅ **Flexible Pricing**: Support free/paid minting with different prices for whitelist and public phases
+- ✅ **Automatic Refunds**: Excess ETH automatically refunded to users
+- ✅ **Fund Management**: Admins can withdraw contract revenue
 
-### 权限管理
-- 👥 **多管理员**: 基于 OpenZeppelin AccessControl
-- 🔐 **角色分离**: DEFAULT_ADMIN_ROLE 和 ADMIN_ROLE 两级权限
-- ⚡ **灵活操作**: 支持动态添加/移除管理员
+### Minting Mechanism
+- 🎫 **Whitelist Phase**: Merkle Tree verification with gas optimization
+- 🌍 **Public Phase**: Open to everyone
+- 🎛️ **Manual Control**: Admins can start/end phases at any time
+- 🔒 **Permanent End**: Can permanently disable minting for a token
 
-## 📋 技术栈
+### Permission Management
+- 👥 **Multi-Admin**: Based on OpenZeppelin AccessControl
+- 🔐 **Role Separation**: Two-level permissions (DEFAULT_ADMIN_ROLE and ADMIN_ROLE)
+- ⚡ **Flexible Operations**: Support dynamic admin add/remove
 
-- **合约标准**: ERC-1155 (多代币标准)
-- **合约库**: OpenZeppelin Contracts v5.1.0
-- **开发框架**: Foundry
-- **Solidity 版本**: ^0.8.24
-- **编译优化**: via-ir 模式
-- **白名单机制**: Merkle Tree
+## 📋 Tech Stack
 
-## 🏗️ 项目结构
+- **Token Standard**: ERC-1155 (Multi-Token Standard)
+- **Contract Library**: OpenZeppelin Contracts v5.1.0
+- **Development Framework**: Foundry
+- **Solidity Version**: ^0.8.24
+- **Compilation**: via-ir mode
+- **Whitelist**: Merkle Tree
+
+## 🏗️ Project Structure
 
 ```
 ethpanda-nft/
 ├── src/
-│   └── EthereumOfMemoryNFT.sol         # 主合约 (521 行)
+│   └── EthereumOfMemoryNFT.sol         # Main contract (521 lines)
 ├── test/
-│   └── EthereumOfMemoryNFT.t.sol       # 测试文件 (54 个测试)
+│   └── EthereumOfMemoryNFT.t.sol       # Test suite (54 tests)
 ├── script/
-│   ├── Deploy.s.sol                    # 部署和管理脚本 (10+ 脚本)
-│   └── GenerateMerkleRoot.s.sol        # Merkle Root 生成工具
+│   ├── Deploy.s.sol                    # Deployment scripts (10+)
+│   └── GenerateMerkleRoot.s.sol        # Merkle Root generator
 ├── scripts/
-│   └── generateMerkleTree.js           # JavaScript Merkle Tree 生成
+│   └── generateMerkleTree.js           # JavaScript Merkle Tree generator
 ├── metadata/
-│   └── 1.json                          # NFT metadata 示例
+│   └── 1.json                          # NFT metadata example
 ├── lib/
-│   ├── forge-std/                      # Foundry 标准库
+│   ├── forge-std/                      # Foundry standard library
 │   └── openzeppelin-contracts/         # OpenZeppelin v5.1.0
-├── foundry.toml                        # Foundry 配置
-└── package.json                        # Node.js 依赖
+├── foundry.toml                        # Foundry configuration
+└── package.json                        # Node.js dependencies
 ```
 
-## 🛠️ 安装和设置
+## 🛠️ Installation & Setup
 
-### 前置要求
+### Prerequisites
 
 - [Foundry](https://book.getfoundry.sh/getting-started/installation)
 - [Node.js](https://nodejs.org/) (v16+)
 - [Git](https://git-scm.com/downloads)
 
-### 安装依赖
+### Install Dependencies
 
 ```bash
-# 克隆仓库
+# Clone repository
 git clone <repository-url>
 cd ethpanda-nft
 
-# 初始化 git 子模块
+# Initialize git submodules
 git submodule update --init --recursive
 
-# 安装 Node.js 依赖
+# Install Node.js dependencies
 npm install
 ```
 
-### 配置环境变量
+### Configure Environment Variables
 
-复制 `.env.example` 并填写配置：
+Copy `.env.example` and fill in the configuration:
 
 ```bash
 cp .env.example .env
 ```
 
-编辑 `.env` 文件：
+Edit `.env` file:
 
 ```bash
-# 私钥（不含 0x 前缀）
+# Private key (without 0x prefix)
 PRIVATE_KEY=your_private_key_here
 
-# RPC 节点
+# RPC endpoints
 SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_PROJECT_ID
 MAINNET_RPC_URL=https://mainnet.infura.io/v3/YOUR_PROJECT_ID
 
 # Etherscan API Key
 ETHERSCAN_API_KEY=your_etherscan_api_key_here
 
-# 默认管理员（可选）
+# Default admin (optional)
 DEFAULT_ADMIN=0xYourAdminAddress
 
-# Token 配置
+# Token configuration
 TOKEN_ID=1
 UPGRADE_NAME=Shapella
 MAX_SUPPLY=10000
@@ -119,50 +121,50 @@ PUBLIC_MAX_PER_ADDRESS=1
 WHITELIST_PRICE=0
 PUBLIC_PRICE=0
 
-# 部署后填写
+# Fill after deployment
 NFT_ADDRESS=0x...
 MERKLE_ROOT=0x...
 ```
 
-## 💻 开发
+## 💻 Development
 
-### 编译合约
+### Compile Contracts
 
 ```bash
 npm run build
-# 或
+# or
 forge build
 ```
 
-### 运行测试
+### Run Tests
 
 ```bash
 npm run test
-# 或
+# or
 forge test --offline
 
-# 查看 gas 报告
+# View gas report
 forge test --gas-report
 
-# 查看覆盖率
+# View coverage
 forge coverage
 ```
 
-**测试统计**: 54 个测试，100% 通过率 ✅
+**Test Statistics**: 54 tests, 100% pass rate ✅
 
-## 🚀 部署流程
+## 🚀 Deployment Process
 
-### 1. 部署主合约
+### 1. Deploy Main Contract
 
 ```bash
 npm run deploy:sepolia
 ```
 
-这会部署 `EthereumOfMemoryNFT` 合约并输出合约地址。
+This deploys the `EthereumOfMemoryNFT` contract and outputs the contract address.
 
-### 2. 创建第一个 Token
+### 2. Create First Token
 
-编辑 `.env` 配置：
+Edit `.env` configuration:
 
 ```bash
 NFT_ADDRESS=0xYourDeployedContractAddress
@@ -170,11 +172,11 @@ UPGRADE_NAME=Shapella
 MAX_SUPPLY=10000
 WHITELIST_MAX_PER_ADDRESS=5
 PUBLIC_MAX_PER_ADDRESS=1
-WHITELIST_PRICE=0                    # 免费
-PUBLIC_PRICE=0                       # 免费
+WHITELIST_PRICE=0                    # Free
+PUBLIC_PRICE=0                       # Free
 ```
 
-执行创建：
+Execute creation:
 
 ```bash
 forge script script/Deploy.s.sol:CreateTokenScript \
@@ -182,55 +184,55 @@ forge script script/Deploy.s.sol:CreateTokenScript \
   --broadcast
 ```
 
-### 3. 生成白名单 Merkle Tree
+### 3. Generate Whitelist Merkle Tree
 
-创建 `whitelist.txt` 文件，每行一个地址：
+Create `whitelist.txt` file with one address per line:
 
 ```
 0x1234567890123456789012345678901234567890
 0xabcdefabcdefabcdefabcdefabcdefabcdefabcd
 ```
 
-生成 Merkle Root：
+Generate Merkle Root:
 
 ```bash
 npm run generate-merkle
 ```
 
-### 4. 设置白名单
+### 4. Setup Whitelist
 
 ```bash
 export TOKEN_ID=1
-export MERKLE_ROOT=0x...  # 从上一步获取
+export MERKLE_ROOT=0x...  # From previous step
 
 forge script script/Deploy.s.sol:SetupWhitelistScript \
   --rpc-url sepolia \
   --broadcast
 ```
 
-### 5. 开始白名单阶段
+### 5. Start Whitelist Phase
 
 ```bash
 export TOKEN_ID=1
-export WHITELIST_PRICE=0  # 或设置价格，如 10000000000000000 (0.01 ETH)
+export WHITELIST_PRICE=0  # Or set price, e.g., 10000000000000000 (0.01 ETH)
 
 forge script script/Deploy.s.sol:StartWhitelistPhaseScript \
   --rpc-url sepolia \
   --broadcast
 ```
 
-### 6. 开始公开阶段
+### 6. Start Public Phase
 
 ```bash
 export TOKEN_ID=1
-export PUBLIC_PRICE=0  # 或设置价格
+export PUBLIC_PRICE=0  # Or set price
 
 forge script script/Deploy.s.sol:StartPublicPhaseScript \
   --rpc-url sepolia \
   --broadcast
 ```
 
-### 7. 提取资金（如果是付费铸造）
+### 7. Withdraw Funds (if paid minting)
 
 ```bash
 export WITHDRAW_TO=0xYourTreasuryAddress
@@ -240,13 +242,13 @@ forge script script/Deploy.s.sol:WithdrawScript \
   --broadcast
 ```
 
-## 📖 合约功能详解
+## 📖 Contract Functions
 
-### Token 管理
+### Token Management
 
-#### 创建新 Token
+#### Create New Token
 
-每次以太坊升级时，创建新的 Token：
+Create a new token for each Ethereum upgrade:
 
 ```solidity
 function createToken(
@@ -254,12 +256,12 @@ function createToken(
     uint256 maxSupply,              // 10000
     uint256 whitelistMaxPerAddress, // 5
     uint256 publicMaxPerAddress,    // 1
-    uint256 whitelistPrice,         // 0 (免费) 或 0.01 ether
-    uint256 publicPrice             // 0 (免费) 或 0.02 ether
+    uint256 whitelistPrice,         // 0 (free) or 0.01 ether
+    uint256 publicPrice             // 0 (free) or 0.02 ether
 ) external returns (uint256 tokenId);
 ```
 
-#### 更新 Token 配置
+#### Update Token Configuration
 
 ```solidity
 function updateTokenConfig(
@@ -272,7 +274,7 @@ function updateTokenConfig(
 ) external;
 ```
 
-#### 查询 Token 信息
+#### Query Token Information
 
 ```solidity
 function getTokenInfo(uint256 tokenId) external view returns (
@@ -288,9 +290,9 @@ function getTokenInfo(uint256 tokenId) external view returns (
 );
 ```
 
-### 用户铸造
+### User Minting
 
-#### 白名单铸造
+#### Whitelist Mint
 
 ```solidity
 function whitelistMint(
@@ -300,51 +302,51 @@ function whitelistMint(
 ) external payable;
 ```
 
-使用示例：
+Usage example:
 ```javascript
-// 免费铸造
+// Free mint
 await nft.whitelistMint(1, 3, proof);
 
-// 付费铸造 (0.01 ETH per NFT)
+// Paid mint (0.01 ETH per NFT)
 await nft.whitelistMint(1, 3, proof, { value: ethers.parseEther("0.03") });
 ```
 
-#### 公开铸造
+#### Public Mint
 
 ```solidity
 function publicMint(uint256 tokenId, uint256 amount) external payable;
 ```
 
-使用示例：
+Usage example:
 ```javascript
-// 免费铸造
+// Free mint
 await nft.publicMint(1, 1);
 
-// 付费铸造
+// Paid mint
 await nft.publicMint(1, 1, { value: ethers.parseEther("0.02") });
 ```
 
-### 管理功能
+### Admin Functions
 
-#### 管理员铸造（免费）
+#### Admin Mint (Free)
 
 ```solidity
 function adminMint(uint256 tokenId, address to, uint256 amount) external;
 ```
 
-#### 结束铸造
+#### End Minting
 
 ```solidity
 function endMintPermanently(uint256 tokenId) external;
 ```
 
-#### 提取资金
+#### Withdraw Funds
 
 ```solidity
 function withdraw(address payable to) external;
 ```
 
-#### 管理员管理
+#### Admin Management
 
 ```solidity
 function addAdmin(address account) external;
@@ -352,12 +354,12 @@ function removeAdmin(address account) external;
 function isAdmin(address account) external view returns (bool);
 ```
 
-## 🎯 使用场景
+## 🎯 Usage Scenarios
 
-### 场景 1: 免费铸造活动
+### Scenario 1: Free Minting Campaign
 
 ```bash
-# 创建免费 Token
+# Create free token
 export UPGRADE_NAME="Shapella"
 export MAX_SUPPLY=10000
 export WHITELIST_MAX_PER_ADDRESS=5
@@ -368,10 +370,10 @@ export PUBLIC_PRICE=0
 forge script script/Deploy.s.sol:CreateTokenScript --rpc-url sepolia --broadcast
 ```
 
-### 场景 2: 付费铸造活动
+### Scenario 2: Paid Minting Campaign
 
 ```bash
-# 创建付费 Token
+# Create paid token
 export UPGRADE_NAME="Dencun"
 export MAX_SUPPLY=8000
 export WHITELIST_MAX_PER_ADDRESS=3
@@ -382,144 +384,96 @@ export PUBLIC_PRICE=20000000000000000      # 0.02 ETH
 forge script script/Deploy.s.sol:CreateTokenScript --rpc-url sepolia --broadcast
 ```
 
-### 场景 3: 白名单免费，公开付费
+### Scenario 3: Free Whitelist, Paid Public
 
 ```bash
 export WHITELIST_PRICE=0
 export PUBLIC_PRICE=10000000000000000   # 0.01 ETH
 ```
 
-### 场景 4: 多个系列并行管理
+### Scenario 4: Multiple Series Management
 
 ```solidity
-// Token 1: Shapella (已结束)
+// Token 1: Shapella (ended)
 nft.endMintPermanently(1);
 
-// Token 2: Dencun (白名单中，免费)
+// Token 2: Dencun (whitelist active, free)
 nft.startWhitelistPhase(2, 0);
 
-// Token 3: Fusaka (未开始，已配置为付费)
-// 等待合适时机启动
+// Token 3: Fusaka (not started, configured as paid)
+// Wait for the right time to start
 ```
 
-## 📊 数据隔离
+## 📊 Data Isolation
 
-每个 Token 的以下数据完全独立：
+Each token has completely independent data:
 
-| 数据项 | 说明 |
-|--------|------|
-| maxSupply | 最大供应量 |
-| whitelistMaxPerAddress | 白名单每地址限额 |
-| publicMaxPerAddress | 公开每地址限额 |
-| whitelistPrice | 白名单价格 |
-| publicPrice | 公开价格 |
-| merkleRoot | 白名单 Merkle Root |
-| phase | 当前阶段状态 |
-| whitelistMinted | 用户白名单铸造记录 |
-| publicMinted | 用户公开铸造记录 |
+| Data Item | Description |
+|-----------|-------------|
+| maxSupply | Maximum supply |
+| whitelistMaxPerAddress | Whitelist per-address limit |
+| publicMaxPerAddress | Public per-address limit |
+| whitelistPrice | Whitelist price |
+| publicPrice | Public price |
+| merkleRoot | Whitelist Merkle Root |
+| phase | Current phase status |
+| whitelistMinted | User whitelist mint records |
+| publicMinted | User public mint records |
 
-## 🔐 权限系统
+## 🔐 Permission System
 
-### 角色定义
+### Role Definitions
 
-- **DEFAULT_ADMIN_ROLE** (最高权限)
-  - 添加/移除 ADMIN_ROLE
-  - 拥有所有 ADMIN_ROLE 权限
+- **DEFAULT_ADMIN_ROLE** (Highest Permission)
+  - Add/remove ADMIN_ROLE
+  - Has all ADMIN_ROLE permissions
 
-- **ADMIN_ROLE** (操作权限)
-  - 创建 Token
-  - 更新配置
-  - 设置白名单
-  - 开始/结束阶段
-  - 管理员铸造
-  - 提取资金
+- **ADMIN_ROLE** (Operational Permission)
+  - Create tokens
+  - Update configuration
+  - Set whitelist
+  - Start/end phases
+  - Admin mint
+  - Withdraw funds
 
-### 多管理员示例
+### Multi-Admin Example
 
 ```bash
-# 添加管理员
+# Add admin
 export NEW_ADMIN=0x...
 forge script script/Deploy.s.sol:AddAdminScript --rpc-url sepolia --broadcast
 
-# 移除管理员
+# Remove admin
 export ADMIN_TO_REMOVE=0x...
 forge script script/Deploy.s.sol:RemoveAdminScript --rpc-url sepolia --broadcast
 ```
 
-## 🧪 测试覆盖
+## 📦 Script Tools
 
-项目包含 54 个全面的测试用例：
+The project provides comprehensive management scripts:
 
-### 测试分类
-
-- ✅ **基础功能** (8 个测试)
-  - Token 创建、配置、查询
-  - 默认价格验证
-
-- ✅ **管理员功能** (3 个测试)
-  - 添加/移除管理员
-  - 权限检查
-
-- ✅ **阶段管理** (8 个测试)
-  - 白名单/公开阶段启动
-  - 价格设置
-
-- ✅ **铸造功能** (12 个测试)
-  - 免费/付费铸造
-  - 自动退款
-  - 配额限制
-
-- ✅ **价格场景** (10 个测试)
-  - 各种价格组合
-  - 多Token不同价格
-
-- ✅ **资金管理** (5 个测试)
-  - 资金提取
-  - 权限验证
-
-- ✅ **数据隔离** (3 个测试)
-  - Token 间隔离验证
-
-- ✅ **边界情况** (5 个测试)
-  - 错误处理
-  - 异常场景
-
-运行测试：
-```bash
-forge test --offline
-```
-
-查看详细结果：
-```bash
-forge test -vvv
-```
-
-## 📦 脚本工具
-
-项目提供了丰富的管理脚本：
-
-| 脚本 | 功能 |
-|------|------|
-| `DeployScript` | 部署主合约 |
-| `CreateTokenScript` | 创建新 Token |
-| `SetupWhitelistScript` | 设置白名单 |
-| `StartWhitelistPhaseScript` | 开始白名单阶段 |
-| `StartPublicPhaseScript` | 开始公开阶段 |
-| `EndMintPermanentlyScript` | 永久结束铸造 |
-| `AdminMintScript` | 管理员铸造 |
-| `WithdrawScript` | 提取资金 |
-| `QueryTokenInfoScript` | 查询 Token 信息 |
-| `AddAdminScript` | 添加管理员 |
-| `RemoveAdminScript` | 移除管理员 |
+| Script | Function |
+|--------|----------|
+| `DeployScript` | Deploy main contract |
+| `CreateTokenScript` | Create new token |
+| `SetupWhitelistScript` | Setup whitelist |
+| `StartWhitelistPhaseScript` | Start whitelist phase |
+| `StartPublicPhaseScript` | Start public phase |
+| `EndMintPermanentlyScript` | End minting permanently |
+| `AdminMintScript` | Admin mint |
+| `WithdrawScript` | Withdraw funds |
+| `QueryTokenInfoScript` | Query token info |
+| `AddAdminScript` | Add admin |
+| `RemoveAdminScript` | Remove admin |
 
 ## 🎨 Metadata
 
-项目包含 NFT metadata 模板：
+The project includes NFT metadata templates:
 
 ```json
 {
   "name": "Memory of Ethereum #1",
-  "description": "Memory of Ethereum (Fusaka) is a limited collection...",
+  "description": "Memory of Ethereum is a limited collection...",
   "image": "ipfs://YOUR_CID/image.png",
   "external_url": "https://ethereum.org",
   "attributes": [
@@ -531,23 +485,23 @@ forge test -vvv
 }
 ```
 
-上传到 IPFS 后，更新 BASE_URI：
+After uploading to IPFS, update BASE_URI:
 
 ```bash
-# 在部署脚本中设置
+# Set in deployment script
 string constant BASE_URI = "ipfs://YOUR_CID/";
 ```
 
-## ⚙️ 配置说明
+## ⚙️ Configuration
 
-### Foundry 配置 (foundry.toml)
+### Foundry Configuration (foundry.toml)
 
 ```toml
 [profile.default]
 solc = "0.8.24"
 optimizer = true
 optimizer_runs = 200
-via_ir = true  # 重要：解决 Stack too deep 问题
+via_ir = true  # Important: solves Stack too deep issues
 
 [rpc_endpoints]
 sepolia = "${SEPOLIA_RPC_URL}"
@@ -558,25 +512,25 @@ sepolia = { key = "${ETHERSCAN_API_KEY}" }
 mainnet = { key = "${ETHERSCAN_API_KEY}" }
 ```
 
-### Gas 优化
+### Gas Optimization
 
-- ✅ 使用 `via_ir` 编译模式
-- ✅ Merkle Tree 白名单验证
-- ✅ 优化的存储布局
-- ✅ 批量操作支持
+- ✅ Using `via_ir` compilation mode
+- ✅ Merkle Tree whitelist verification
+- ✅ Optimized storage layout
+- ✅ Batch operation support
 
-## 🔍 合约验证
+## 🔍 Contract Verification
 
-### 自动验证
+### Automatic Verification
 
-部署时自动验证：
+Verify automatically during deployment:
 ```bash
 npm run deploy:sepolia
 ```
 
-### 手动验证
+### Manual Verification
 
-如果自动验证失败：
+If automatic verification fails:
 ```bash
 export CONTRACT_ADDRESS=0x...
 export BASE_URI=ipfs://YOUR_CID/
@@ -585,48 +539,42 @@ export DEFAULT_ADMIN=0x...
 npm run verify:sepolia
 ```
 
-详细说明请参考 [VERIFY.md](./VERIFY.md)
+See [VERIFY.md](./VERIFY.md) for details.
 
-## 📚 相关文档
+## 📚 Documentation
 
 - [Foundry Book](https://book.getfoundry.sh/)
 - [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts/)
 - [ERC-1155 Standard](https://eips.ethereum.org/EIPS/eip-1155)
-- [Merkle Tree 说明](https://en.wikipedia.org/wiki/Merkle_tree)
+- [Merkle Tree](https://en.wikipedia.org/wiki/Merkle_tree)
 
-## 🛡️ 安全考虑
+## 🛡️ Security Considerations
 
-### 已实施的安全措施
+### Implemented Security Measures
 
-- ✅ OpenZeppelin 标准合约库
-- ✅ 完整的单元测试覆盖
-- ✅ 权限控制和访问限制
-- ✅ 重入攻击保护（使用 OpenZeppelin 的 ReentrancyGuard 模式）
-- ✅ 整数溢出保护（Solidity 0.8+）
-- ✅ 自动退款机制
+- ✅ OpenZeppelin standard contract library
+- ✅ Comprehensive unit test coverage
+- ✅ Permission control and access restrictions
+- ✅ Reentrancy attack protection (OpenZeppelin ReentrancyGuard pattern)
+- ✅ Integer overflow protection (Solidity 0.8+)
+- ✅ Automatic refund mechanism
 
-### 审计建议
+### Audit Recommendations
 
-在主网部署前建议：
-- 🔒 进行专业的安全审计
-- 🔒 在测试网进行充分测试
-- 🔒 使用多签钱包管理 DEFAULT_ADMIN_ROLE
-- 🔒 设置合理的供应量和价格
-- 🔒 准备应急暂停机制
+Before mainnet deployment:
+- 🔒 Conduct professional security audit
+- 🔒 Thoroughly test on testnet
+- 🔒 Use multi-sig wallet for DEFAULT_ADMIN_ROLE
+- 🔒 Set reasonable supply and prices
+- 🔒 Prepare emergency pause mechanism
 
-## 🤝 贡献
+## 🤝 Contributing
 
-欢迎提交 Issue 和 Pull Request！
+Issues and Pull Requests are welcome!
 
-## 📄 许可证
+## 📄 License
 
 MIT License
-
-## 📞 联系方式
-
-- GitHub: [Your GitHub]
-- Twitter: [@YourTwitter]
-- Discord: [Your Discord]
 
 ---
 
