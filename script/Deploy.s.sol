@@ -14,9 +14,8 @@ import {EthereumOfMemoryNFT} from "../src/EthereumOfMemoryNFT.sol";
 contract DeployScript is Script {
     // 配置参数
     string constant NAME = "Memory of Ethereum";
-    string constant SYMBOL = "Fusaka";
+    string constant SYMBOL = "MoE";
     string constant BASE_URI = "https://apricot-embarrassed-locust-895.mypinata.cloud/ipfs/bafybeibbwkzoznk24jn3ulqm6xkn2iq5mjubphgmtwydidpdgmdtmm76ma/";
-    
     
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
@@ -37,8 +36,45 @@ contract DeployScript is Script {
         console.log("Is Admin:", nft.hasRole(ADMIN_ROLE, defaultAdmin));
         console.log("Name:", nft.name());
         console.log("Symbol:", nft.symbol());
-        console.log("Max Supply:", nft.MAX_SUPPLY());
-        console.log("Token ID:", nft.TOKEN_ID());
+        console.log("Current Token ID:", nft.currentTokenId());
+        
+        vm.stopBroadcast();
+    }
+}
+
+/**
+ * @title Create Token Script
+ * @dev 创建新的 Token（代表新的以太坊升级）
+ * 
+ * 使用方法:
+ * forge script script/Deploy.s.sol:CreateTokenScript --rpc-url <RPC_URL> --broadcast
+ */
+contract CreateTokenScript is Script {
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address nftAddress = vm.envAddress("NFT_ADDRESS");
+        string memory upgradeName = vm.envString("UPGRADE_NAME");
+        uint256 maxSupply = vm.envUint("MAX_SUPPLY");
+        uint256 whitelistMax = vm.envUint("WHITELIST_MAX_PER_ADDRESS");
+        uint256 publicMax = vm.envUint("PUBLIC_MAX_PER_ADDRESS");
+        
+        vm.startBroadcast(deployerPrivateKey);
+        
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        
+        uint256 tokenId = nft.createToken(
+            upgradeName,
+            maxSupply,
+            whitelistMax,
+            publicMax
+        );
+        
+        console.log("=== Token Created ===");
+        console.log("Token ID:", tokenId);
+        console.log("Upgrade Name:", upgradeName);
+        console.log("Max Supply:", maxSupply);
+        console.log("Whitelist Max Per Address:", whitelistMax);
+        console.log("Public Max Per Address:", publicMax);
         
         vm.stopBroadcast();
     }
@@ -47,28 +83,21 @@ contract DeployScript is Script {
 /**
  * @title Setup Whitelist Script
  * @dev 设置白名单 Merkle Root 的脚本
- * 
- * 使用方法:
- * forge script script/Deploy.s.sol:SetupWhitelistScript --rpc-url <RPC_URL> --broadcast
- * 
- * 注意: 需要提前生成 Merkle Root
  */
 contract SetupWhitelistScript is Script {
     function run() external {
-        // 从环境变量读取配置
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address nftAddress = vm.envAddress("NFT_ADDRESS");
+        uint256 tokenId = vm.envUint("TOKEN_ID");
         bytes32 merkleRoot = vm.envBytes32("MERKLE_ROOT");
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
-        
-        // 设置 Merkle Root
-        nft.setMerkleRoot(merkleRoot);
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        nft.setMerkleRoot(tokenId, merkleRoot);
         
         console.log("=== Whitelist Setup ===");
-        console.log("NFT Address:", address(nft));
+        console.log("Token ID:", tokenId);
         console.log("Merkle Root:", uint256(merkleRoot));
         
         vm.stopBroadcast();
@@ -78,26 +107,23 @@ contract SetupWhitelistScript is Script {
 /**
  * @title Start Whitelist Phase Script
  * @dev 开始白名单阶段的脚本
- * 
- * 使用方法:
- * forge script script/Deploy.s.sol:StartWhitelistPhaseScript --rpc-url <RPC_URL> --broadcast
  */
 contract StartWhitelistPhaseScript is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address nftAddress = vm.envAddress("NFT_ADDRESS");
+        uint256 tokenId = vm.envUint("TOKEN_ID");
+        uint256 price = vm.envOr("WHITELIST_PRICE", uint256(0));
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
-        
-        // 开始白名单阶段
-        nft.startWhitelistPhase();
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        nft.startWhitelistPhase(tokenId, price);
         
         console.log("=== Whitelist Phase Started ===");
-        console.log("NFT Address:", address(nft));
-        console.log("Start Time:", nft.whitelistStartTime());
-        console.log("Current Phase:", uint256(nft.getCurrentPhase()));
+        console.log("Token ID:", tokenId);
+        console.log("Price:", price);
+        console.log("Current Phase:", uint256(nft.getCurrentPhase(tokenId)));
         
         vm.stopBroadcast();
     }
@@ -106,26 +132,23 @@ contract StartWhitelistPhaseScript is Script {
 /**
  * @title Start Public Phase Script
  * @dev 开始公开阶段的脚本
- * 
- * 使用方法:
- * forge script script/Deploy.s.sol:StartPublicPhaseScript --rpc-url <RPC_URL> --broadcast
  */
 contract StartPublicPhaseScript is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address nftAddress = vm.envAddress("NFT_ADDRESS");
+        uint256 tokenId = vm.envUint("TOKEN_ID");
+        uint256 price = vm.envOr("PUBLIC_PRICE", uint256(0));
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
-        
-        // 开始公开阶段
-        nft.startPublicPhase();
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        nft.startPublicPhase(tokenId, price);
         
         console.log("=== Public Phase Started ===");
-        console.log("NFT Address:", address(nft));
-        console.log("Start Time:", nft.publicStartTime());
-        console.log("Current Phase:", uint256(nft.getCurrentPhase()));
+        console.log("Token ID:", tokenId);
+        console.log("Price:", price);
+        console.log("Current Phase:", uint256(nft.getCurrentPhase(tokenId)));
         
         vm.stopBroadcast();
     }
@@ -133,45 +156,139 @@ contract StartPublicPhaseScript is Script {
 
 /**
  * @title End Mint Permanently Script
- * @dev 永久结束 mint 并销毁剩余 NFT 的脚本
- * 
- * 使用方法:
- * forge script script/Deploy.s.sol:EndMintPermanentlyScript --rpc-url <RPC_URL> --broadcast
+ * @dev 永久结束 mint 的脚本
  */
 contract EndMintPermanentlyScript is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address nftAddress = vm.envAddress("NFT_ADDRESS");
+        uint256 tokenId = vm.envUint("TOKEN_ID");
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
         
-        uint256 currentSupply = nft.totalSupply(nft.TOKEN_ID());
-        uint256 remainingSupply = nft.remainingSupply();
+        uint256 remainingSupply = nft.remainingSupply(tokenId);
         
         console.log("=== Before Ending Mint ===");
-        console.log("Current Supply:", currentSupply);
+        console.log("Token ID:", tokenId);
         console.log("Remaining Supply:", remainingSupply);
         
-        // 永久结束 mint
-        nft.endMintPermanently();
+        nft.endMintPermanently(tokenId);
         
         console.log("\n=== After Ending Mint ===");
-        console.log("Mint Ended:", nft.mintEnded());
-        console.log("Remaining Supply:", nft.remainingSupply());
-        console.log("Final Supply:", nft.totalSupply(nft.TOKEN_ID()));
+        console.log("Remaining Supply:", nft.remainingSupply(tokenId));
         
         vm.stopBroadcast();
     }
 }
 
 /**
+ * @title Admin Mint Script
+ * @dev 管理员铸造 NFT 的脚本
+ */
+contract AdminMintScript is Script {
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address nftAddress = vm.envAddress("NFT_ADDRESS");
+        uint256 tokenId = vm.envUint("TOKEN_ID");
+        address recipient = vm.envAddress("RECIPIENT_ADDRESS");
+        uint256 amount = vm.envUint("MINT_AMOUNT");
+        
+        vm.startBroadcast(deployerPrivateKey);
+        
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        
+        console.log("=== Admin Mint ===");
+        console.log("Token ID:", tokenId);
+        console.log("Recipient:", recipient);
+        console.log("Amount:", amount);
+        
+        nft.adminMint(tokenId, recipient, amount);
+        
+        console.log("Recipient Balance:", nft.balanceOf(recipient, tokenId));
+        
+        vm.stopBroadcast();
+    }
+}
+
+/**
+ * @title Withdraw Funds Script
+ * @dev 提取合约中的资金
+ */
+contract WithdrawScript is Script {
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address nftAddress = vm.envAddress("NFT_ADDRESS");
+        address payable recipient = payable(vm.envAddress("WITHDRAW_TO"));
+        
+        vm.startBroadcast(deployerPrivateKey);
+        
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        
+        uint256 balance = address(nft).balance;
+        console.log("=== Withdraw Funds ===");
+        console.log("Contract Balance:", balance);
+        console.log("Withdraw To:", recipient);
+        
+        nft.withdraw(recipient);
+        
+        console.log("Withdrawn Successfully");
+        
+        vm.stopBroadcast();
+    }
+}
+
+/**
+ * @title Query Token Info Script
+ * @dev 查询 Token 信息的脚本
+ */
+contract QueryTokenInfoScript is Script {
+    function run() external view {
+        address nftAddress = vm.envAddress("NFT_ADDRESS");
+        uint256 tokenId = vm.envUint("TOKEN_ID");
+        
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        
+        (
+            string memory upgradeName,
+            uint256 maxSupply,
+            uint256 currentSupply,
+            uint256 whitelistMaxPerAddress,
+            uint256 publicMaxPerAddress,
+            uint256 whitelistPrice,
+            uint256 publicPrice,
+            EthereumOfMemoryNFT.MintPhase phase,
+            bool ended
+        ) = nft.getTokenInfo(tokenId);
+        
+        console.log("=== Token Info ===");
+        console.log("Token ID:", tokenId);
+        console.log("Upgrade Name:", upgradeName);
+        console.log("Max Supply:", maxSupply);
+        console.log("Current Supply:", currentSupply);
+        console.log("Remaining Supply:", nft.remainingSupply(tokenId));
+        console.log("");
+        
+        console.log("=== Mint Limits ===");
+        console.log("Whitelist Max Per Address:", whitelistMaxPerAddress);
+        console.log("Public Max Per Address:", publicMaxPerAddress);
+        console.log("");
+        
+        console.log("=== Prices ===");
+        console.log("Whitelist Price:", whitelistPrice);
+        console.log("Public Price:", publicPrice);
+        console.log("");
+        
+        console.log("=== Status ===");
+        console.log("Current Phase:", uint256(phase));
+        console.log("Mint Ended:", ended);
+    }
+}
+
+/**
  * @title Add Admin Script
  * @dev 添加新管理员的脚本
- * 
- * 使用方法:
- * forge script script/Deploy.s.sol:AddAdminScript --rpc-url <RPC_URL> --broadcast
  */
 contract AddAdminScript is Script {
     function run() external {
@@ -181,10 +298,9 @@ contract AddAdminScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
         
         console.log("=== Adding Admin ===");
-        console.log("NFT Address:", address(nft));
         console.log("New Admin:", newAdmin);
         
         nft.addAdmin(newAdmin);
@@ -198,9 +314,6 @@ contract AddAdminScript is Script {
 /**
  * @title Remove Admin Script
  * @dev 移除管理员的脚本
- * 
- * 使用方法:
- * forge script script/Deploy.s.sol:RemoveAdminScript --rpc-url <RPC_URL> --broadcast
  */
 contract RemoveAdminScript is Script {
     function run() external {
@@ -210,10 +323,9 @@ contract RemoveAdminScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
         
         console.log("=== Removing Admin ===");
-        console.log("NFT Address:", address(nft));
         console.log("Admin to Remove:", adminToRemove);
         
         nft.removeAdmin(adminToRemove);
@@ -223,85 +335,3 @@ contract RemoveAdminScript is Script {
         vm.stopBroadcast();
     }
 }
-
-/**
- * @title Admin Mint Script
- * @dev 管理员铸造 NFT 的脚本（用于空投等）
- * 
- * 使用方法:
- * forge script script/Deploy.s.sol:AdminMintScript --rpc-url <RPC_URL> --broadcast
- */
-contract AdminMintScript is Script {
-    function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address nftAddress = vm.envAddress("NFT_ADDRESS");
-        address recipient = vm.envAddress("RECIPIENT_ADDRESS");
-        uint256 amount = vm.envUint("MINT_AMOUNT");
-        
-        vm.startBroadcast(deployerPrivateKey);
-        
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
-        
-        console.log("=== Admin Mint ===");
-        console.log("Recipient:", recipient);
-        console.log("Amount:", amount);
-        console.log("Current Supply:", nft.totalSupply(nft.TOKEN_ID()));
-        
-        nft.adminMint(recipient, amount);
-        
-        console.log("New Supply:", nft.totalSupply(nft.TOKEN_ID()));
-        console.log("Recipient Balance:", nft.balanceOf(recipient, nft.TOKEN_ID()));
-        
-        vm.stopBroadcast();
-    }
-}
-
-/**
- * @title Query Contract Status Script
- * @dev 查询合约当前状态的脚本
- * 
- * 使用方法:
- * forge script script/Deploy.s.sol:QueryStatusScript --rpc-url <RPC_URL>
- */
-contract QueryStatusScript is Script {
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
-    
-    function run() external view {
-        address nftAddress = vm.envAddress("NFT_ADDRESS");
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
-        
-        console.log("=== Contract Status ===");
-        console.log("Contract Address:", address(nft));
-        console.log("Name:", nft.name());
-        console.log("Symbol:", nft.symbol());
-        console.log("");
-        
-        console.log("=== Admin Info ===");
-        address checkAddress = vm.envOr("CHECK_ADDRESS", address(0));
-        if (checkAddress != address(0)) {
-            console.log("Checking Address:", checkAddress);
-            console.log("Is Admin:", nft.isAdmin(checkAddress));
-            console.log("Has DEFAULT_ADMIN_ROLE:", nft.hasRole(DEFAULT_ADMIN_ROLE, checkAddress));
-        }
-        console.log("");
-        
-        console.log("=== Supply Info ===");
-        console.log("Max Supply:", nft.MAX_SUPPLY());
-        console.log("Current Supply:", nft.totalSupply(nft.TOKEN_ID()));
-        console.log("Remaining Supply:", nft.remainingSupply());
-        console.log("Mint Ended:", nft.mintEnded());
-        console.log("");
-        
-        console.log("=== Phase Info ===");
-        console.log("Current Phase:", uint256(nft.getCurrentPhase()));
-        console.log("Whitelist Start Time:", nft.whitelistStartTime());
-        console.log("Public Start Time:", nft.publicStartTime());
-        console.log("");
-        
-        console.log("=== Mint Limits ===");
-        console.log("Whitelist Max Per Address:", nft.WHITELIST_MAX_PER_ADDRESS());
-        console.log("Public Max Per Address:", nft.PUBLIC_MAX_PER_ADDRESS());
-    }
-}
-

@@ -10,8 +10,8 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
  * @title EthereumOfMemoryNFT
- * @dev ERC-1155 NFT 合约，支持白名单和公开 mint 阶段
- * @notice Memory of Ethereum NFT 集合，总供应量 10000，使用 AccessControl 实现多管理员
+ * @dev ERC-1155 NFT 合约，支持多个 Token ID，每个代表一次以太坊升级
+ * @notice Memory of Ethereum NFT 集合，每个升级对应一个独立的 NFT 系列
  */
 contract EthereumOfMemoryNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply {
     using Strings for uint256;
@@ -26,35 +26,8 @@ contract EthereumOfMemoryNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
     // 基础 URI
     string private _baseTokenURI;
     
-    // Token ID (固定为 1)
-    uint256 public constant TOKEN_ID = 1;
-    
-    // 总供应量
-    uint256 public constant MAX_SUPPLY = 10000;
-    
-    // 白名单阶段每地址最大 mint 数量
-    uint256 public constant WHITELIST_MAX_PER_ADDRESS = 5;
-    
-    // 公开阶段每地址最大 mint 数量
-    uint256 public constant PUBLIC_MAX_PER_ADDRESS = 1;
-    
-    // Merkle root for whitelist
-    bytes32 public merkleRoot;
-    
-    // 白名单阶段开始时间
-    uint256 public whitelistStartTime;
-    
-    // 公开阶段开始时间
-    uint256 public publicStartTime;
-    
-    // Mint 是否已结束（永久销毁后）
-    bool public mintEnded;
-    
-    // 白名单阶段每个地址已 mint 数量
-    mapping(address => uint256) public whitelistMinted;
-    
-    // 公开阶段每个地址已 mint 数量
-    mapping(address => uint256) public publicMinted;
+    // 当前最新的 Token ID（每次升级加 1）
+    uint256 public currentTokenId;
 
     // Mint 阶段枚举
     enum MintPhase {
@@ -64,16 +37,43 @@ contract EthereumOfMemoryNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         Ended
     }
 
+    // Token 配置结构体
+    struct TokenConfig {
+        uint256 maxSupply;              // 最大供应量
+        uint256 whitelistMaxPerAddress; // 白名单每地址最大 mint 数量
+        uint256 publicMaxPerAddress;    // 公开阶段每地址最大 mint 数量
+        uint256 whitelistPrice;         // 白名单阶段价格
+        uint256 publicPrice;            // 公开阶段价格
+        bytes32 merkleRoot;             // 白名单 Merkle Root
+        uint256 whitelistStartTime;     // 白名单开始时间
+        uint256 publicStartTime;        // 公开开始时间
+        bool mintEnded;                 // Mint 是否已结束
+        string upgradeName;             // 升级名称（如 "Shapella", "Dencun"）
+    }
+
+    // Token ID => Token 配置
+    mapping(uint256 => TokenConfig) public tokenConfigs;
+    
+    // Token ID => 用户地址 => 白名单阶段已 mint 数量
+    mapping(uint256 => mapping(address => uint256)) public whitelistMinted;
+    
+    // Token ID => 用户地址 => 公开阶段已 mint 数量
+    mapping(uint256 => mapping(address => uint256)) public publicMinted;
+
     // 事件
-    event MerkleRootUpdated(bytes32 newMerkleRoot);
-    event WhitelistPhaseStarted(uint256 startTime);
-    event PublicPhaseStarted(uint256 startTime);
-    event MintPermanentlyEnded(uint256 remainingSupply, uint256 burned);
+    event TokenCreated(uint256 indexed tokenId, string upgradeName, uint256 maxSupply);
+    event TokenConfigUpdated(uint256 indexed tokenId);
+    event MerkleRootUpdated(uint256 indexed tokenId, bytes32 newMerkleRoot);
+    event WhitelistPhaseStarted(uint256 indexed tokenId, uint256 startTime, uint256 price);
+    event PublicPhaseStarted(uint256 indexed tokenId, uint256 startTime, uint256 price);
+    event MintPermanentlyEnded(uint256 indexed tokenId, uint256 remainingSupply);
     event BaseURIUpdated(string newBaseURI);
-    event WhitelistMint(address indexed minter, uint256 amount);
-    event PublicMint(address indexed minter, uint256 amount);
+    event WhitelistMint(uint256 indexed tokenId, address indexed minter, uint256 amount, uint256 totalPaid);
+    event PublicMint(uint256 indexed tokenId, address indexed minter, uint256 amount, uint256 totalPaid);
+    event AdminMint(uint256 indexed tokenId, address indexed to, uint256 amount);
     event AdminAdded(address indexed account);
     event AdminRemoved(address indexed account);
+    event FundsWithdrawn(address indexed to, uint256 amount);
 
     /**
      * @dev 构造函数
@@ -98,19 +98,84 @@ contract EthereumOfMemoryNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
     }
 
     /**
-     * @dev 获取当前 mint 阶段
+     * @dev 创建新的 Token（新的以太坊升级）
+     * @param upgradeName 升级名称
+     * @param maxSupply 最大供应量
+     * @param whitelistMaxPerAddress 白名单每地址最大 mint 数量
+     * @param publicMaxPerAddress 公开阶段每地址最大 mint 数量
      */
-    function getCurrentPhase() public view returns (MintPhase) {
-        if (mintEnded) {
+    function createToken(
+        string memory upgradeName,
+        uint256 maxSupply,
+        uint256 whitelistMaxPerAddress,
+        uint256 publicMaxPerAddress
+    ) external onlyRole(ADMIN_ROLE) returns (uint256) {
+        require(maxSupply > 0, "Max supply must be greater than 0");
+        require(whitelistMaxPerAddress > 0, "Whitelist max must be greater than 0");
+        require(publicMaxPerAddress > 0, "Public max must be greater than 0");
+        
+        currentTokenId++;
+        uint256 newTokenId = currentTokenId;
+        
+        tokenConfigs[newTokenId] = TokenConfig({
+            maxSupply: maxSupply,
+            whitelistMaxPerAddress: whitelistMaxPerAddress,
+            publicMaxPerAddress: publicMaxPerAddress,
+            whitelistPrice: 0,
+            publicPrice: 0,
+            merkleRoot: bytes32(0),
+            whitelistStartTime: 0,
+            publicStartTime: 0,
+            mintEnded: false,
+            upgradeName: upgradeName
+        });
+        
+        emit TokenCreated(newTokenId, upgradeName, maxSupply);
+        return newTokenId;
+    }
+
+    /**
+     * @dev 更新 Token 配置
+     */
+    function updateTokenConfig(
+        uint256 tokenId,
+        uint256 maxSupply,
+        uint256 whitelistMaxPerAddress,
+        uint256 publicMaxPerAddress,
+        uint256 whitelistPrice,
+        uint256 publicPrice
+    ) external onlyRole(ADMIN_ROLE) {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        TokenConfig storage config = tokenConfigs[tokenId];
+        require(!config.mintEnded, "Token mint has ended");
+        require(maxSupply >= totalSupply(tokenId), "Max supply less than current supply");
+        
+        config.maxSupply = maxSupply;
+        config.whitelistMaxPerAddress = whitelistMaxPerAddress;
+        config.publicMaxPerAddress = publicMaxPerAddress;
+        config.whitelistPrice = whitelistPrice;
+        config.publicPrice = publicPrice;
+        
+        emit TokenConfigUpdated(tokenId);
+    }
+
+    /**
+     * @dev 获取当前 Token 的 mint 阶段
+     */
+    function getCurrentPhase(uint256 tokenId) public view returns (MintPhase) {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        TokenConfig storage config = tokenConfigs[tokenId];
+        
+        if (config.mintEnded) {
             return MintPhase.Ended;
         }
         
-        if (whitelistStartTime == 0) {
+        if (config.whitelistStartTime == 0) {
             return MintPhase.NotStarted;
         }
         
         // 白名单阶段已开启但公开阶段未开启
-        if (publicStartTime == 0) {
+        if (config.publicStartTime == 0) {
             return MintPhase.Whitelist;
         }
         
@@ -120,7 +185,6 @@ contract EthereumOfMemoryNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
 
     /**
      * @dev 添加管理员
-     * @param account 要添加的管理员地址
      */
     function addAdmin(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
         grantRole(ADMIN_ROLE, account);
@@ -129,7 +193,6 @@ contract EthereumOfMemoryNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
 
     /**
      * @dev 移除管理员
-     * @param account 要移除的管理员地址
      */
     function removeAdmin(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
         revokeRole(ADMIN_ROLE, account);
@@ -138,8 +201,6 @@ contract EthereumOfMemoryNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
 
     /**
      * @dev 检查地址是否是管理员
-     * @param account 要检查的地址
-     * @return 是否是管理员
      */
     function isAdmin(address account) external view returns (bool) {
         return hasRole(ADMIN_ROLE, account);
@@ -147,128 +208,175 @@ contract EthereumOfMemoryNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
 
     /**
      * @dev 设置 Merkle Root（白名单）
-     * @param _merkleRoot 新的 Merkle Root
      */
-    function setMerkleRoot(bytes32 _merkleRoot) external onlyRole(ADMIN_ROLE) {
-        merkleRoot = _merkleRoot;
-        emit MerkleRootUpdated(_merkleRoot);
+    function setMerkleRoot(uint256 tokenId, bytes32 _merkleRoot) external onlyRole(ADMIN_ROLE) {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        tokenConfigs[tokenId].merkleRoot = _merkleRoot;
+        emit MerkleRootUpdated(tokenId, _merkleRoot);
     }
 
     /**
      * @dev 开始白名单阶段
      */
-    function startWhitelistPhase() external onlyRole(ADMIN_ROLE) {
-        require(whitelistStartTime == 0, "Whitelist phase already started");
-        require(merkleRoot != bytes32(0), "Merkle root not set");
+    function startWhitelistPhase(uint256 tokenId, uint256 price) external onlyRole(ADMIN_ROLE) {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        TokenConfig storage config = tokenConfigs[tokenId];
+        require(config.whitelistStartTime == 0, "Whitelist phase already started");
+        require(config.merkleRoot != bytes32(0), "Merkle root not set");
         
-        whitelistStartTime = block.timestamp;
-        emit WhitelistPhaseStarted(whitelistStartTime);
+        config.whitelistStartTime = block.timestamp;
+        config.whitelistPrice = price;
+        emit WhitelistPhaseStarted(tokenId, block.timestamp, price);
     }
 
     /**
      * @dev 开始公开阶段
      */
-    function startPublicPhase() external onlyRole(ADMIN_ROLE) {
-        require(whitelistStartTime > 0, "Whitelist phase not started");
-        require(publicStartTime == 0, "Public phase already started");
+    function startPublicPhase(uint256 tokenId, uint256 price) external onlyRole(ADMIN_ROLE) {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        TokenConfig storage config = tokenConfigs[tokenId];
+        require(config.whitelistStartTime > 0, "Whitelist phase not started");
+        require(config.publicStartTime == 0, "Public phase already started");
         
-        publicStartTime = block.timestamp;
-        emit PublicPhaseStarted(publicStartTime);
+        config.publicStartTime = block.timestamp;
+        config.publicPrice = price;
+        emit PublicPhaseStarted(tokenId, block.timestamp, price);
     }
 
     /**
      * @dev 白名单 mint
-     * @param amount mint 数量
-     * @param merkleProof Merkle proof
      */
-    function whitelistMint(uint256 amount, bytes32[] calldata merkleProof) external {
-        require(!mintEnded, "Mint has permanently ended");
-        require(getCurrentPhase() == MintPhase.Whitelist, "Not in whitelist phase");
+    function whitelistMint(
+        uint256 tokenId,
+        uint256 amount,
+        bytes32[] calldata merkleProof
+    ) external payable {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        TokenConfig storage config = tokenConfigs[tokenId];
+        
+        require(!config.mintEnded, "Mint has permanently ended");
+        require(getCurrentPhase(tokenId) == MintPhase.Whitelist, "Not in whitelist phase");
         require(amount > 0, "Amount must be greater than 0");
         require(
-            whitelistMinted[msg.sender] + amount <= WHITELIST_MAX_PER_ADDRESS,
+            whitelistMinted[tokenId][msg.sender] + amount <= config.whitelistMaxPerAddress,
             "Exceeds whitelist allocation"
         );
         require(
-            totalSupply(TOKEN_ID) + amount <= MAX_SUPPLY,
+            totalSupply(tokenId) + amount <= config.maxSupply,
             "Exceeds max supply"
         );
+        
+        // 检查支付金额
+        uint256 totalPrice = config.whitelistPrice * amount;
+        require(msg.value >= totalPrice, "Insufficient payment");
         
         // 验证白名单
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
         require(
-            MerkleProof.verify(merkleProof, merkleRoot, leaf),
+            MerkleProof.verify(merkleProof, config.merkleRoot, leaf),
             "Invalid merkle proof"
         );
         
         // 更新已 mint 数量
-        whitelistMinted[msg.sender] += amount;
+        whitelistMinted[tokenId][msg.sender] += amount;
         
         // Mint NFT
-        _mint(msg.sender, TOKEN_ID, amount, "");
+        _mint(msg.sender, tokenId, amount, "");
         
-        emit WhitelistMint(msg.sender, amount);
+        // 退还多余的 ETH
+        if (msg.value > totalPrice) {
+            payable(msg.sender).transfer(msg.value - totalPrice);
+        }
+        
+        emit WhitelistMint(tokenId, msg.sender, amount, totalPrice);
     }
 
     /**
      * @dev 公开 mint
-     * @param amount mint 数量
      */
-    function publicMint(uint256 amount) external {
-        require(!mintEnded, "Mint has permanently ended");
-        require(getCurrentPhase() == MintPhase.Public, "Not in public phase");
+    function publicMint(uint256 tokenId, uint256 amount) external payable {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        TokenConfig storage config = tokenConfigs[tokenId];
+        
+        require(!config.mintEnded, "Mint has permanently ended");
+        require(getCurrentPhase(tokenId) == MintPhase.Public, "Not in public phase");
         require(amount > 0, "Amount must be greater than 0");
         require(
-            publicMinted[msg.sender] + amount <= PUBLIC_MAX_PER_ADDRESS,
+            publicMinted[tokenId][msg.sender] + amount <= config.publicMaxPerAddress,
             "Exceeds public allocation"
         );
         require(
-            totalSupply(TOKEN_ID) + amount <= MAX_SUPPLY,
+            totalSupply(tokenId) + amount <= config.maxSupply,
             "Exceeds max supply"
         );
+        
+        // 检查支付金额
+        uint256 totalPrice = config.publicPrice * amount;
+        require(msg.value >= totalPrice, "Insufficient payment");
         
         // 更新已 mint 数量
-        publicMinted[msg.sender] += amount;
+        publicMinted[tokenId][msg.sender] += amount;
         
         // Mint NFT
-        _mint(msg.sender, TOKEN_ID, amount, "");
+        _mint(msg.sender, tokenId, amount, "");
         
-        emit PublicMint(msg.sender, amount);
+        // 退还多余的 ETH
+        if (msg.value > totalPrice) {
+            payable(msg.sender).transfer(msg.value - totalPrice);
+        }
+        
+        emit PublicMint(tokenId, msg.sender, amount, totalPrice);
     }
 
     /**
-     * @dev 管理员 mint（不受阶段和数量限制）
-     * @param to 接收地址
-     * @param amount 数量
+     * @dev 管理员 mint（不受阶段和数量限制，免费）
      */
-    function adminMint(address to, uint256 amount) external onlyRole(ADMIN_ROLE) {
-        require(!mintEnded, "Mint has permanently ended");
+    function adminMint(uint256 tokenId, address to, uint256 amount) external onlyRole(ADMIN_ROLE) {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        TokenConfig storage config = tokenConfigs[tokenId];
+        
+        require(!config.mintEnded, "Mint has permanently ended");
         require(
-            totalSupply(TOKEN_ID) + amount <= MAX_SUPPLY,
+            totalSupply(tokenId) + amount <= config.maxSupply,
             "Exceeds max supply"
         );
         
-        _mint(to, TOKEN_ID, amount, "");
+        _mint(to, tokenId, amount, "");
+        emit AdminMint(tokenId, to, amount);
     }
 
     /**
-     * @dev 永久结束 mint 并销毁所有剩余 NFT
+     * @dev 永久结束某个 Token 的 mint
      */
-    function endMintPermanently() external onlyRole(ADMIN_ROLE) {
-        require(!mintEnded, "Mint already ended");
+    function endMintPermanently(uint256 tokenId) external onlyRole(ADMIN_ROLE) {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        TokenConfig storage config = tokenConfigs[tokenId];
+        require(!config.mintEnded, "Mint already ended");
         
-        uint256 currentSupply = totalSupply(TOKEN_ID);
-        uint256 remaining = MAX_SUPPLY - currentSupply;
+        uint256 currentSupply = totalSupply(tokenId);
+        uint256 remaining = config.maxSupply - currentSupply;
         
         // 标记 mint 已结束
-        mintEnded = true;
+        config.mintEnded = true;
         
-        emit MintPermanentlyEnded(remaining, remaining);
+        emit MintPermanentlyEnded(tokenId, remaining);
+    }
+
+    /**
+     * @dev 提取合约中的 ETH
+     */
+    function withdraw(address payable to) external onlyRole(ADMIN_ROLE) {
+        uint256 balance = address(this).balance;
+        require(balance > 0, "No funds to withdraw");
+        
+        (bool success, ) = to.call{value: balance}("");
+        require(success, "Transfer failed");
+        
+        emit FundsWithdrawn(to, balance);
     }
 
     /**
      * @dev 设置基础 URI
-     * @param newBaseURI 新的基础 URI
      */
     function setBaseURI(string memory newBaseURI) external onlyRole(ADMIN_ROLE) {
         _baseTokenURI = newBaseURI;
@@ -278,73 +386,107 @@ contract EthereumOfMemoryNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
 
     /**
      * @dev 获取 token URI
-     * @param tokenId token ID
-     * @return token 的完整 URI
      */
     function uri(uint256 tokenId) public view override returns (string memory) {
-        require(tokenId == TOKEN_ID, "Invalid token ID");
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
         return string(abi.encodePacked(_baseTokenURI, tokenId.toString(), ".json"));
     }
-
 
     /**
      * @dev 获取剩余可 mint 数量
      */
-    function remainingSupply() external view returns (uint256) {
-        if (mintEnded) {
+    function remainingSupply(uint256 tokenId) external view returns (uint256) {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        TokenConfig storage config = tokenConfigs[tokenId];
+        
+        if (config.mintEnded) {
             return 0;
         }
-        return MAX_SUPPLY - totalSupply(TOKEN_ID);
+        return config.maxSupply - totalSupply(tokenId);
     }
 
     /**
      * @dev 获取地址在白名单阶段剩余可 mint 数量
      */
-    function whitelistRemainingForAddress(address account)
+    function whitelistRemainingForAddress(uint256 tokenId, address account)
         external
         view
         returns (uint256)
     {
-        if (getCurrentPhase() != MintPhase.Whitelist) {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        if (getCurrentPhase(tokenId) != MintPhase.Whitelist) {
             return 0;
         }
-        return WHITELIST_MAX_PER_ADDRESS - whitelistMinted[account];
+        TokenConfig storage config = tokenConfigs[tokenId];
+        return config.whitelistMaxPerAddress - whitelistMinted[tokenId][account];
     }
 
     /**
      * @dev 获取地址在公开阶段剩余可 mint 数量
      */
-    function publicRemainingForAddress(address account)
+    function publicRemainingForAddress(uint256 tokenId, address account)
         external
         view
         returns (uint256)
     {
-        if (getCurrentPhase() != MintPhase.Public) {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        if (getCurrentPhase(tokenId) != MintPhase.Public) {
             return 0;
         }
-        return PUBLIC_MAX_PER_ADDRESS - publicMinted[account];
+        TokenConfig storage config = tokenConfigs[tokenId];
+        return config.publicMaxPerAddress - publicMinted[tokenId][account];
     }
 
     /**
      * @dev 批量检查地址是否在白名单中
-     * @param accounts 地址数组
-     * @param merkleProofs Merkle proofs 数组
-     * @return 布尔数组，表示每个地址是否在白名单中
      */
     function verifyWhitelist(
+        uint256 tokenId,
         address[] calldata accounts,
         bytes32[][] calldata merkleProofs
     ) external view returns (bool[] memory) {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
         require(accounts.length == merkleProofs.length, "Arrays length mismatch");
         
+        TokenConfig storage config = tokenConfigs[tokenId];
         bool[] memory results = new bool[](accounts.length);
         
         for (uint256 i = 0; i < accounts.length; i++) {
             bytes32 leaf = keccak256(abi.encodePacked(accounts[i]));
-            results[i] = MerkleProof.verify(merkleProofs[i], merkleRoot, leaf);
+            results[i] = MerkleProof.verify(merkleProofs[i], config.merkleRoot, leaf);
         }
         
         return results;
+    }
+
+    /**
+     * @dev 获取 Token 的详细信息
+     */
+    function getTokenInfo(uint256 tokenId) external view returns (
+        string memory upgradeName,
+        uint256 maxSupply,
+        uint256 currentSupply,
+        uint256 whitelistMaxPerAddress,
+        uint256 publicMaxPerAddress,
+        uint256 whitelistPrice,
+        uint256 publicPrice,
+        MintPhase phase,
+        bool ended
+    ) {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        TokenConfig storage config = tokenConfigs[tokenId];
+        
+        return (
+            config.upgradeName,
+            config.maxSupply,
+            totalSupply(tokenId),
+            config.whitelistMaxPerAddress,
+            config.publicMaxPerAddress,
+            config.whitelistPrice,
+            config.publicPrice,
+            getCurrentPhase(tokenId),
+            config.mintEnded
+        );
     }
 
     // 必需的覆盖函数
@@ -368,4 +510,7 @@ contract EthereumOfMemoryNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
     {
         return super.supportsInterface(interfaceId);
     }
+
+    // 接收 ETH
+    receive() external payable {}
 }
