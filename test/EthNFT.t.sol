@@ -384,7 +384,7 @@ contract EthereumOfMemoryNFTTest is Test {
     }
 
     function testSetBaseURI() public {
-        string memory newBaseURI = "https://new-api.ethpanda.io/metadata/";
+        string memory newBaseURI = "https://new-api.ethereum.io/metadata/";
         
         nft.setBaseURI(newBaseURI);
         

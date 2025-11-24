@@ -1,10 +1,10 @@
-# EthPanda NFT
+# Ethereum NFT
 
-ETHPanda NFT 智能合约项目 - 基于 ERC-1155 标准的 NFT 集合，支持白名单和公开铸造阶段。
+Ethereum NFT 智能合约项目 - 基于 ERC-1155 标准的 NFT 集合，支持白名单和公开铸造阶段。
 
 ## 项目概述
 
-EthPanda NFT 是一个基于以太坊的 NFT 项目，使用 ERC-1155 标准，总供应量 10,000 份（Token ID = 1）。项目采用两阶段铸造机制：白名单阶段（2天，每地址最多5个）和公开阶段（2天，每地址最多1个），**完全免费铸造**（用户只需支付 gas 费用）。
+Ethereum NFT 是一个基于以太坊的 NFT 项目，使用 ERC-1155 标准，总供应量 10,000 份（Token ID = 1）。项目采用两阶段铸造机制：白名单阶段（2天，每地址最多5个）和公开阶段（2天，每地址最多1个），**完全免费铸造**（用户只需支付 gas 费用）。
 
 技术亮点：
 - 使用 **Merkle Tree** 实现 gas 优化的白名单验证
@@ -35,7 +35,7 @@ EthPanda NFT 是一个基于以太坊的 NFT 项目，使用 ERC-1155 标准，�
 ## 项目结构
 
 ```
-ethpanda-nft/
+ethereum-nft/
 ├── src/
 │   └── EthereumOfMemoryNFT.sol              # 主合约
 ├── test/
@@ -67,7 +67,7 @@ ethpanda-nft/
 ```bash
 # 克隆仓库
 git clone <repository-url>
-cd ethpanda-nft
+cd ethereum-nft-contract
 
 # 初始化 git 子模块
 git submodule update --init --recursive
@@ -298,16 +298,6 @@ MAX_SUPPLY = 10,000                    // 最大供应量
 WHITELIST_MAX_PER_ADDRESS = 5         // 白名单阶段每地址最大 mint 数量
 PUBLIC_MAX_PER_ADDRESS = 1            // 公开阶段每地址最大 mint 数量
 PHASE_DURATION = 2 days                // 每个阶段持续时间
-```
-
-### 部署参数
-
-在 `script/Deploy.s.sol` 中配置：
-
-```solidity
-NAME = "EthPanda NFT"                  // NFT 名称
-SYMBOL = "EPNFT"                       // NFT 符号
-BASE_URI = "https://api.ethpanda.io/metadata/"  // 元数据基础 URI
 ```
 
 ## 合约功能

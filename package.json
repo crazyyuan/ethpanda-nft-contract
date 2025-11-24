@@ -1,7 +1,7 @@
 {
-  "name": "ethpanda-nft",
+  "name": "eth-memory-nft",
   "version": "1.0.0",
-  "description": "EthPanda NFT - ERC-1155 NFT collection with whitelist and public mint phases",
+  "description": "Eth Memory NFT - ERC-1155 NFT collection with whitelist and public mint phases",
   "scripts": {
     "generate-merkle": "node scripts/generateMerkleTree.js",
     "test": "forge test",

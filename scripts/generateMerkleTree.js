@@ -24,7 +24,7 @@ const whitelist = [
   '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc',
 ];
 
-console.log('🐼 Generating Merkle Tree for EthPanda NFT Whitelist\n');
+console.log('🐼 Generating Merkle Tree for Ethereum NFT Whitelist\n');
 
 // 生成叶子节点
 const leaves = whitelist.map(address => keccak256(address));
