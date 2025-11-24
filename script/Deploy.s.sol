@@ -57,6 +57,8 @@ contract CreateTokenScript is Script {
         uint256 maxSupply = vm.envUint("MAX_SUPPLY");
         uint256 whitelistMax = vm.envUint("WHITELIST_MAX_PER_ADDRESS");
         uint256 publicMax = vm.envUint("PUBLIC_MAX_PER_ADDRESS");
+        uint256 whitelistPrice = vm.envOr("WHITELIST_PRICE", uint256(0));
+        uint256 publicPrice = vm.envOr("PUBLIC_PRICE", uint256(0));
         
         vm.startBroadcast(deployerPrivateKey);
         
@@ -66,7 +68,9 @@ contract CreateTokenScript is Script {
             upgradeName,
             maxSupply,
             whitelistMax,
-            publicMax
+            publicMax,
+            whitelistPrice,
+            publicPrice
         );
         
         console.log("=== Token Created ===");
@@ -75,6 +79,8 @@ contract CreateTokenScript is Script {
         console.log("Max Supply:", maxSupply);
         console.log("Whitelist Max Per Address:", whitelistMax);
         console.log("Public Max Per Address:", publicMax);
+        console.log("Whitelist Price:", whitelistPrice);
+        console.log("Public Price:", publicPrice);
         
         vm.stopBroadcast();
     }

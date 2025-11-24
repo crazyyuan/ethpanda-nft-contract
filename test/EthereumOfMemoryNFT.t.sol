@@ -28,6 +28,7 @@ contract EthereumOfMemoryNFTTest is Test {
     bytes32[] public merkleProof2;
 
     event TokenCreated(uint256 indexed tokenId, string upgradeName, uint256 maxSupply);
+    event TokenConfigUpdated(uint256 indexed tokenId);
     event WhitelistPhaseStarted(uint256 indexed tokenId, uint256 startTime, uint256 price);
     event PublicPhaseStarted(uint256 indexed tokenId, uint256 startTime, uint256 price);
     event MintPermanentlyEnded(uint256 indexed tokenId, uint256 remainingSupply);
@@ -51,9 +52,9 @@ contract EthereumOfMemoryNFTTest is Test {
         vm.deal(user2, 10 ether);
         vm.deal(user3, 10 ether);
         
-        // 创建两个 Token
-        tokenId1 = nft.createToken("Shapella", 10000, 5, 1);
-        tokenId2 = nft.createToken("Dencun", 8000, 3, 2);
+        // 创建两个 Token（默认价格为 0）
+        tokenId1 = nft.createToken("Shapella", 10000, 5, 1, 0, 0);
+        tokenId2 = nft.createToken("Dencun", 8000, 3, 2, 0, 0);
         
         // 设置 Merkle Tree (user1 和 user2 在白名单中)
         bytes32 leaf1 = keccak256(abi.encodePacked(user1));
@@ -93,7 +94,7 @@ contract EthereumOfMemoryNFTTest is Test {
         vm.expectEmit(true, false, false, true);
         emit TokenCreated(3, "Fusaka", 5000);
         
-        uint256 newTokenId = nft.createToken("Fusaka", 5000, 2, 1);
+        uint256 newTokenId = nft.createToken("Fusaka", 5000, 2, 1, 0, 0);
         
         assertEq(newTokenId, 3);
         assertEq(nft.currentTokenId(), 3);
@@ -104,8 +105,8 @@ contract EthereumOfMemoryNFTTest is Test {
             ,
             uint256 whitelistMax,
             uint256 publicMax,
-            ,
-            ,
+            uint256 whitelistPrice,
+            uint256 publicPrice,
             ,
         ) = nft.getTokenInfo(newTokenId);
         
@@ -113,6 +114,45 @@ contract EthereumOfMemoryNFTTest is Test {
         assertEq(maxSupply, 5000);
         assertEq(whitelistMax, 2);
         assertEq(publicMax, 1);
+        assertEq(whitelistPrice, 0);
+        assertEq(publicPrice, 0);
+    }
+
+    function testCreateTokenWithPrice() public {
+        uint256 newTokenId = nft.createToken("Fusaka", 5000, 2, 1, 0.01 ether, 0.02 ether);
+        
+        (
+            ,
+            ,
+            ,
+            ,
+            ,
+            uint256 whitelistPrice,
+            uint256 publicPrice,
+            ,
+        ) = nft.getTokenInfo(newTokenId);
+        
+        assertEq(whitelistPrice, 0.01 ether);
+        assertEq(publicPrice, 0.02 ether);
+    }
+
+    function testCreateTokenDefaultPriceZero() public {
+        // 明确测试默认价格为 0
+        uint256 newTokenId = nft.createToken("Fusaka", 5000, 2, 1, 0, 0);
+        
+        (
+            ,
+            ,
+            ,
+            ,
+            ,
+            uint256 whitelistPrice,
+            uint256 publicPrice,
+            ,
+        ) = nft.getTokenInfo(newTokenId);
+        
+        assertEq(whitelistPrice, 0);
+        assertEq(publicPrice, 0);
     }
 
     function testGetTokenInfo() public view {
@@ -137,6 +177,67 @@ contract EthereumOfMemoryNFTTest is Test {
         assertEq(publicPrice, 0);
         assertEq(uint256(phase), uint256(EthereumOfMemoryNFT.MintPhase.NotStarted));
         assertEq(ended, false);
+    }
+
+    function testUpdateTokenConfig() public {
+        // 更新 token 配置
+        vm.expectEmit(true, false, false, false);
+        emit TokenConfigUpdated(tokenId1);
+        
+        nft.updateTokenConfig(
+            tokenId1,
+            12000,           // 新的 maxSupply
+            10,              // 新的 whitelistMax
+            3,               // 新的 publicMax
+            0.01 ether,      // whitelistPrice
+            0.02 ether       // publicPrice
+        );
+        
+        (
+            ,
+            uint256 maxSupply,
+            ,
+            uint256 whitelistMax,
+            uint256 publicMax,
+            uint256 whitelistPrice,
+            uint256 publicPrice,
+            ,
+        ) = nft.getTokenInfo(tokenId1);
+        
+        assertEq(maxSupply, 12000);
+        assertEq(whitelistMax, 10);
+        assertEq(publicMax, 3);
+        assertEq(whitelistPrice, 0.01 ether);
+        assertEq(publicPrice, 0.02 ether);
+    }
+
+    function testUpdateTokenConfigOnlyAdmin() public {
+        vm.prank(user1);
+        vm.expectRevert();
+        nft.updateTokenConfig(tokenId1, 12000, 10, 3, 0.01 ether, 0.02 ether);
+    }
+
+    function testUpdateTokenConfigCannotReduceSupplyBelowCurrent() public {
+        // 先 mint 一些
+        nft.adminMint(tokenId1, user1, 5000);
+        
+        // 尝试将 maxSupply 设置为低于当前供应量
+        vm.expectRevert("Max supply less than current supply");
+        nft.updateTokenConfig(tokenId1, 4000, 5, 1, 0, 0);
+    }
+
+    function testUpdateTokenConfigAfterMintEnded() public {
+        nft.startWhitelistPhase(tokenId1, 0);
+        nft.startPublicPhase(tokenId1, 0);
+        nft.endMintPermanently(tokenId1);
+        
+        vm.expectRevert("Token mint has ended");
+        nft.updateTokenConfig(tokenId1, 12000, 10, 3, 0, 0);
+    }
+
+    function testUpdateTokenConfigInvalidTokenId() public {
+        vm.expectRevert("Invalid token ID");
+        nft.updateTokenConfig(999, 10000, 5, 1, 0, 0);
     }
 
     // ========== 管理员功能测试 ==========
@@ -201,6 +302,67 @@ contract EthereumOfMemoryNFTTest is Test {
         
         (, , , , , , uint256 publicPrice, , ) = nft.getTokenInfo(tokenId1);
         assertEq(publicPrice, price);
+    }
+
+    // ========== 默认价格测试 ==========
+
+    function testDefaultPriceIsZero() public view {
+        // 验证新创建的 token 默认价格为 0
+        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , ) = nft.getTokenInfo(tokenId1);
+        assertEq(whitelistPrice, 0);
+        assertEq(publicPrice, 0);
+    }
+
+    function testMintWithZeroPrice() public {
+        // 价格为 0 时，不需要发送 ETH
+        nft.startWhitelistPhase(tokenId1, 0);
+        
+        vm.prank(user1);
+        nft.whitelistMint(tokenId1, 1, merkleProof1);
+        
+        assertEq(nft.balanceOf(user1, tokenId1), 1);
+        assertEq(address(nft).balance, 0);
+    }
+
+    function testMintWithZeroPriceCanSendETH() public {
+        // 即使价格为 0，也可以发送 ETH（会被退回）
+        nft.startWhitelistPhase(tokenId1, 0);
+        
+        uint256 balanceBefore = user1.balance;
+        
+        vm.prank(user1);
+        nft.whitelistMint{value: 1 ether}(tokenId1, 1, merkleProof1);
+        
+        uint256 balanceAfter = user1.balance;
+        
+        // ETH 应该被全部退回
+        assertEq(balanceBefore, balanceAfter);
+        assertEq(address(nft).balance, 0);
+    }
+
+    function testCanSetPriceViaUpdateConfig() public {
+        // 通过 updateTokenConfig 设置价格
+        nft.updateTokenConfig(tokenId1, 10000, 5, 1, 0.01 ether, 0.02 ether);
+        
+        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , ) = nft.getTokenInfo(tokenId1);
+        assertEq(whitelistPrice, 0.01 ether);
+        assertEq(publicPrice, 0.02 ether);
+        
+        // 然后启动阶段
+        nft.startWhitelistPhase(tokenId1, 0.015 ether); // 可以在启动时覆盖价格
+        
+        (, , , , , uint256 updatedWhitelistPrice, , , ) = nft.getTokenInfo(tokenId1);
+        assertEq(updatedWhitelistPrice, 0.015 ether);
+    }
+
+    function testPriceCanBeChangedBeforePhaseStarts() public {
+        // 在阶段开始前可以多次更新价格
+        nft.updateTokenConfig(tokenId1, 10000, 5, 1, 0.01 ether, 0.02 ether);
+        nft.updateTokenConfig(tokenId1, 10000, 5, 1, 0.02 ether, 0.03 ether);
+        
+        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , ) = nft.getTokenInfo(tokenId1);
+        assertEq(whitelistPrice, 0.02 ether);
+        assertEq(publicPrice, 0.03 ether);
     }
 
     // ========== Whitelist Mint 测试 ==========
@@ -324,6 +486,33 @@ contract EthereumOfMemoryNFTTest is Test {
         vm.stopPrank();
     }
 
+    function testPublicMintInsufficientPayment() public {
+        nft.startWhitelistPhase(tokenId1, 0);
+        
+        uint256 price = 0.02 ether;
+        nft.startPublicPhase(tokenId1, price);
+        
+        vm.prank(user3);
+        vm.expectRevert("Insufficient payment");
+        nft.publicMint{value: 0.01 ether}(tokenId1, 1);
+    }
+
+    function testPublicMintRefundsExcess() public {
+        nft.startWhitelistPhase(tokenId1, 0);
+        
+        uint256 price = 0.02 ether;
+        nft.startPublicPhase(tokenId1, price);
+        
+        uint256 balanceBefore = user3.balance;
+        
+        vm.prank(user3);
+        nft.publicMint{value: 0.1 ether}(tokenId1, 1);
+        
+        uint256 balanceAfter = user3.balance;
+        assertEq(balanceBefore - balanceAfter, price);
+        assertEq(address(nft).balance, price);
+    }
+
     // ========== Admin Mint 测试 ==========
 
     function testAdminMint() public {
@@ -406,6 +595,98 @@ contract EthereumOfMemoryNFTTest is Test {
         nft.whitelistMint(tokenId2, 1, merkleProof1);
     }
 
+    // ========== 价格组合测试 ==========
+
+    function testDifferentPricesForDifferentTokens() public {
+        // token1: 免费
+        // token2: 付费
+        nft.startWhitelistPhase(tokenId1, 0);
+        nft.startWhitelistPhase(tokenId2, 0.01 ether);
+        
+        // token1 免费 mint
+        vm.prank(user1);
+        nft.whitelistMint(tokenId1, 1, merkleProof1);
+        assertEq(address(nft).balance, 0);
+        
+        // token2 付费 mint
+        vm.prank(user1);
+        nft.whitelistMint{value: 0.03 ether}(tokenId2, 3, merkleProof1);
+        assertEq(address(nft).balance, 0.03 ether);
+    }
+
+    function testDifferentPricesForWhitelistAndPublic() public {
+        // 白名单便宜，公开贵
+        nft.startWhitelistPhase(tokenId1, 0.01 ether);
+        nft.startPublicPhase(tokenId1, 0.05 ether);
+        
+        // 检查价格设置
+        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , ) = nft.getTokenInfo(tokenId1);
+        assertEq(whitelistPrice, 0.01 ether);
+        assertEq(publicPrice, 0.05 ether);
+        
+        // 公开 mint 应该使用公开价格
+        vm.prank(user3);
+        nft.publicMint{value: 0.05 ether}(tokenId1, 1);
+        assertEq(address(nft).balance, 0.05 ether);
+    }
+
+    function testWhitelistFreePublicPaid() public {
+        // 白名单免费，公开付费
+        nft.startWhitelistPhase(tokenId1, 0);
+        
+        // 白名单免费 mint（在公开阶段开始前）
+        vm.prank(user1);
+        nft.whitelistMint(tokenId1, 1, merkleProof1);
+        assertEq(address(nft).balance, 0);
+        
+        // 开始公开阶段
+        nft.startPublicPhase(tokenId1, 0.02 ether);
+        
+        // 公开付费 mint
+        vm.prank(user3);
+        nft.publicMint{value: 0.02 ether}(tokenId1, 1);
+        assertEq(address(nft).balance, 0.02 ether);
+    }
+
+    function testWhitelistPaidPublicFree() public {
+        // 白名单付费，公开免费（不常见但应该支持）
+        nft.startWhitelistPhase(tokenId1, 0.01 ether);
+        nft.startPublicPhase(tokenId1, 0);
+        
+        // 公开免费 mint
+        vm.prank(user3);
+        nft.publicMint(tokenId1, 1);
+        assertEq(address(nft).balance, 0);
+    }
+
+    function testMultipleMintsDifferentPrices() public {
+        // 多次 mint，累计金额
+        nft.startWhitelistPhase(tokenId1, 0.01 ether);
+        
+        vm.startPrank(user1);
+        nft.whitelistMint{value: 0.01 ether}(tokenId1, 1, merkleProof1);
+        nft.whitelistMint{value: 0.02 ether}(tokenId1, 2, merkleProof1);
+        nft.whitelistMint{value: 0.02 ether}(tokenId1, 2, merkleProof1);
+        vm.stopPrank();
+        
+        assertEq(nft.balanceOf(user1, tokenId1), 5);
+        assertEq(address(nft).balance, 0.05 ether);
+    }
+
+    function testExactPayment() public {
+        // 测试精确支付（不多不少）
+        nft.startWhitelistPhase(tokenId1, 0.01 ether);
+        
+        uint256 balanceBefore = user1.balance;
+        
+        vm.prank(user1);
+        nft.whitelistMint{value: 0.03 ether}(tokenId1, 3, merkleProof1);
+        
+        uint256 balanceAfter = user1.balance;
+        assertEq(balanceBefore - balanceAfter, 0.03 ether);
+        assertEq(address(nft).balance, 0.03 ether);
+    }
+
     // ========== 提现测试 ==========
 
     function testWithdraw() public {
@@ -425,6 +706,50 @@ contract EthereumOfMemoryNFTTest is Test {
         
         assertEq(address(nft).balance, 0);
         assertEq(admin2.balance, recipientBalanceBefore + contractBalance);
+    }
+
+    function testWithdrawMultipleSources() public {
+        // 从多个 token 和阶段收集资金
+        nft.startWhitelistPhase(tokenId1, 0.01 ether);
+        nft.startWhitelistPhase(tokenId2, 0.015 ether);
+        
+        // token1 白名单
+        vm.prank(user1);
+        nft.whitelistMint{value: 0.05 ether}(tokenId1, 5, merkleProof1);
+        
+        // 开始 token1 公开阶段
+        nft.startPublicPhase(tokenId1, 0.02 ether);
+        
+        // token1 公开
+        vm.prank(user3);
+        nft.publicMint{value: 0.02 ether}(tokenId1, 1);
+        
+        // token2 白名单
+        vm.prank(user2);
+        nft.whitelistMint{value: 0.045 ether}(tokenId2, 3, merkleProof2);
+        
+        uint256 totalCollected = 0.05 ether + 0.02 ether + 0.045 ether;
+        assertEq(address(nft).balance, totalCollected);
+        
+        // 提现
+        nft.withdraw(payable(admin));
+        assertEq(address(nft).balance, 0);
+    }
+
+    function testWithdrawOnlyAdmin() public {
+        nft.startWhitelistPhase(tokenId1, 0.01 ether);
+        
+        vm.prank(user1);
+        nft.whitelistMint{value: 0.01 ether}(tokenId1, 1, merkleProof1);
+        
+        vm.prank(user2);
+        vm.expectRevert();
+        nft.withdraw(payable(user2));
+    }
+
+    function testWithdrawNoFunds() public {
+        vm.expectRevert("No funds to withdraw");
+        nft.withdraw(payable(admin));
     }
 
     // ========== End Mint 测试 ==========
@@ -503,11 +828,11 @@ contract EthereumOfMemoryNFTTest is Test {
     }
 
     function testCompleteFlow() public {
-        // 创建新 token
-        uint256 newTokenId = nft.createToken("Fusaka", 5000, 2, 1);
+        // 创建新 token（带价格）
+        uint256 newTokenId = nft.createToken("Fusaka", 5000, 2, 1, 0.01 ether, 0.02 ether);
         nft.setMerkleRoot(newTokenId, merkleRoot);
         
-        // 白名单阶段
+        // 白名单阶段（使用创建时设置的价格，或者覆盖）
         nft.startWhitelistPhase(newTokenId, 0.01 ether);
         
         vm.prank(user1);

@@ -103,12 +103,16 @@ contract EthereumOfMemoryNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
      * @param maxSupply 最大供应量
      * @param whitelistMaxPerAddress 白名单每地址最大 mint 数量
      * @param publicMaxPerAddress 公开阶段每地址最大 mint 数量
+     * @param whitelistPrice 白名单价格（可选，默认 0）
+     * @param publicPrice 公开价格（可选，默认 0）
      */
     function createToken(
         string memory upgradeName,
         uint256 maxSupply,
         uint256 whitelistMaxPerAddress,
-        uint256 publicMaxPerAddress
+        uint256 publicMaxPerAddress,
+        uint256 whitelistPrice,
+        uint256 publicPrice
     ) external onlyRole(ADMIN_ROLE) returns (uint256) {
         require(maxSupply > 0, "Max supply must be greater than 0");
         require(whitelistMaxPerAddress > 0, "Whitelist max must be greater than 0");
@@ -121,8 +125,8 @@ contract EthereumOfMemoryNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
             maxSupply: maxSupply,
             whitelistMaxPerAddress: whitelistMaxPerAddress,
             publicMaxPerAddress: publicMaxPerAddress,
-            whitelistPrice: 0,
-            publicPrice: 0,
+            whitelistPrice: whitelistPrice,
+            publicPrice: publicPrice,
             merkleRoot: bytes32(0),
             whitelistStartTime: 0,
             publicStartTime: 0,

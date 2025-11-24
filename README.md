@@ -1,65 +1,75 @@
-# Ethereum NFT
+# Memory of Ethereum NFT
 
-Ethereum NFT 智能合约项目 - 基于 ERC-1155 标准的 NFT 集合，支持白名单和公开铸造阶段。
+Memory of Ethereum（以太坊记忆）- 纪念以太坊每次重大升级的 NFT 集合，基于 ERC-1155 标准，支持多 Token 系列管理。
 
-## 项目概述
+## 🎯 项目概述
 
-Ethereum NFT 是一个基于以太坊的 NFT 项目，使用 ERC-1155 标准，总供应量 10,000 份（Token ID = 1）。项目采用两阶段铸造机制：白名单阶段（2天，每地址最多5个）和公开阶段（2天，每地址最多1个），**完全免费铸造**（用户只需支付 gas 费用）。
+Memory of Ethereum 是一个创新的 NFT 项目，每次以太坊重大升级（如 Shapella, Dencun, Fusaka 等）都会发行一个独立的 NFT 系列。每个系列都是独立的 Token ID，拥有独立的配置、白名单和价格设置。
 
-技术亮点：
-- 使用 **Merkle Tree** 实现 gas 优化的白名单验证
-- 使用 **OpenZeppelin AccessControl** 实现灵活的多管理员权限控制
-- 支持永久结束铸造，防止意外增发
-- 基于 OpenZeppelin v5.1.0 合约库构建，采用 Foundry 作为开发和测试框架
+### 核心理念
 
-## 技术栈
+- 🌟 **纪念意义**: 每个 NFT 代表一次以太坊的重大技术升级
+- 🎨 **独立系列**: 每次升级对应独立的 Token ID 和配置
+- 🔓 **灵活定价**: 支持免费或付费铸造，可针对不同阶段设置不同价格
+- 🛡️ **安全可靠**: 基于 OpenZeppelin v5.1.0 和 Foundry 构建
+
+## 🚀 主要特性
+
+### 核心功能
+- ✅ **多 Token 支持**: 每次以太坊升级创建新的 Token ID
+- ✅ **数据隔离**: 每个 Token 拥有独立的配置、白名单和用户记录
+- ✅ **灵活定价**: 支持免费/付费铸造，可针对白名单和公开阶段设置不同价格
+- ✅ **自动退款**: 用户支付多余的 ETH 会自动退还
+- ✅ **资金管理**: 管理员可提取合约收益
+
+### 铸造机制
+- 🎫 **白名单阶段**: 使用 Merkle Tree 验证，高效且 gas 优化
+- 🌍 **公开阶段**: 向所有人开放
+- 🎛️ **手动控制**: 管理员可随时开启/结束各阶段
+- 🔒 **永久结束**: 可永久禁止某个 Token 继续铸造
+
+### 权限管理
+- 👥 **多管理员**: 基于 OpenZeppelin AccessControl
+- 🔐 **角色分离**: DEFAULT_ADMIN_ROLE 和 ADMIN_ROLE 两级权限
+- ⚡ **灵活操作**: 支持动态添加/移除管理员
+
+## 📋 技术栈
 
 - **合约标准**: ERC-1155 (多代币标准)
 - **合约库**: OpenZeppelin Contracts v5.1.0
 - **开发框架**: Foundry
 - **Solidity 版本**: ^0.8.24
+- **编译优化**: via-ir 模式
 - **白名单机制**: Merkle Tree
 
-## 主要特性
-
-- ✅ **固定供应量**: 总供应量 10,000 NFT
-- ✅ **免费铸造**: 用户只需支付 gas 费即可铸造
-- ✅ **两阶段铸造**: 白名单阶段和公开阶段，各持续 2 天
-- ✅ **白名单机制**: 使用 Merkle Tree 进行高效的白名单验证
-- ✅ **限量铸造**: 白名单每地址最多 5 个，公开阶段每地址最多 1 个
-- ✅ **永久销毁**: mint 结束后可永久销毁剩余 NFT，禁止再次铸造
-- ✅ **多管理员**: 使用 AccessControl 支持多个管理员
-- ✅ **批量操作**: 支持批量转账
-- ✅ **销毁机制**: 支持 NFT 销毁
-
-## 项目结构
+## 🏗️ 项目结构
 
 ```
-ethereum-nft/
+ethpanda-nft/
 ├── src/
-│   └── EthereumOfMemoryNFT.sol              # 主合约
+│   └── EthereumOfMemoryNFT.sol         # 主合约 (521 行)
 ├── test/
-│   └── EthereumOfMemoryNFT.t.sol            # 测试文件
+│   └── EthereumOfMemoryNFT.t.sol       # 测试文件 (54 个测试)
 ├── script/
-│   ├── Deploy.s.sol                 # 部署和管理脚本
-│   └── GenerateMerkleRoot.s.sol    # Merkle Root 生成工具
+│   ├── Deploy.s.sol                    # 部署和管理脚本 (10+ 脚本)
+│   └── GenerateMerkleRoot.s.sol        # Merkle Root 生成工具
 ├── scripts/
-│   └── generateMerkleTree.js        # JavaScript Merkle Tree 生成脚本
+│   └── generateMerkleTree.js           # JavaScript Merkle Tree 生成
+├── metadata/
+│   └── 1.json                          # NFT metadata 示例
 ├── lib/
-│   ├── forge-std/                   # Foundry 标准库
-│   └── openzeppelin-contracts/      # OpenZeppelin 合约库 v5.1.0
-├── foundry.toml                     # Foundry 配置
-├── remappings.txt                   # 导入路径映射
-├── package.json                     # Node.js 依赖
-└── README.md
+│   ├── forge-std/                      # Foundry 标准库
+│   └── openzeppelin-contracts/         # OpenZeppelin v5.1.0
+├── foundry.toml                        # Foundry 配置
+└── package.json                        # Node.js 依赖
 ```
 
-## 安装和设置
+## 🛠️ 安装和设置
 
 ### 前置要求
 
 - [Foundry](https://book.getfoundry.sh/getting-started/installation)
-- [Node.js](https://nodejs.org/) (用于生成 Merkle Tree)
+- [Node.js](https://nodejs.org/) (v16+)
 - [Git](https://git-scm.com/downloads)
 
 ### 安装依赖
@@ -67,7 +77,7 @@ ethereum-nft/
 ```bash
 # 克隆仓库
 git clone <repository-url>
-cd ethereum-nft-contract
+cd ethpanda-nft
 
 # 初始化 git 子模块
 git submodule update --init --recursive
@@ -78,514 +88,546 @@ npm install
 
 ### 配置环境变量
 
-创建 `.env` 文件并填写配置：
+复制 `.env.example` 并填写配置：
 
 ```bash
+cp .env.example .env
+```
+
+编辑 `.env` 文件：
+
+```bash
+# 私钥（不含 0x 前缀）
 PRIVATE_KEY=your_private_key_here
-SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY
-MAINNET_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY
+
+# RPC 节点
+SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_PROJECT_ID
+MAINNET_RPC_URL=https://mainnet.infura.io/v3/YOUR_PROJECT_ID
+
+# Etherscan API Key
 ETHERSCAN_API_KEY=your_etherscan_api_key_here
+
+# 默认管理员（可选）
+DEFAULT_ADMIN=0xYourAdminAddress
+
+# Token 配置
+TOKEN_ID=1
+UPGRADE_NAME=Shapella
+MAX_SUPPLY=10000
+WHITELIST_MAX_PER_ADDRESS=5
+PUBLIC_MAX_PER_ADDRESS=1
+WHITELIST_PRICE=0
+PUBLIC_PRICE=0
 
 # 部署后填写
 NFT_ADDRESS=0x...
 MERKLE_ROOT=0x...
 ```
 
-## 开发
+## 💻 开发
 
 ### 编译合约
 
 ```bash
+npm run build
+# 或
 forge build
 ```
 
 ### 运行测试
 
 ```bash
-# 运行所有测试
-forge test
-
-# 运行测试并显示详细信息
-forge test -vvv
-
-# 运行特定测试
-forge test --match-test testWhitelistMint
-
-# 查看测试覆盖率
-forge coverage
+npm run test
+# 或
+forge test --offline
 
 # 查看 gas 报告
 forge test --gas-report
+
+# 查看覆盖率
+forge coverage
 ```
 
-### 本地测试
+**测试统计**: 54 个测试，100% 通过率 ✅
+
+## 🚀 部署流程
+
+### 1. 部署主合约
 
 ```bash
-# 启动本地节点
-anvil
-
-# 在另一个终端部署到本地网络
-forge script script/Deploy.s.sol:DeployScript --rpc-url http://localhost:8545 --broadcast
+npm run deploy:sepolia
 ```
 
-## Mint 阶段和流程
+这会部署 `EthereumOfMemoryNFT` 合约并输出合约地址。
 
-### 阶段说明
+### 2. 创建第一个 Token
 
-1. **未开始阶段 (NotStarted)**
-   - 合约部署后的初始状态
-   - 只有管理员可以通过 `adminMint()` 进行 mint
-
-2. **白名单阶段 (Whitelist) - 2 天**
-   - 白名单用户可以 mint
-   - 每个地址最多 mint 5 个
-   - 需要提供 Merkle Proof
-
-3. **公开阶段 (Public) - 2 天**
-   - 任何人都可以 mint
-   - 每个地址最多 mint 1 个
-
-4. **结束阶段 (Ended)**
-   - 两个阶段结束后自动进入
-   - 可以调用 `endMintPermanently()` 永久销毁剩余 NFT
-
-### 完整部署和运行流程
-
-#### 1. 部署合约
+编辑 `.env` 配置：
 
 ```bash
-# 部署合约（默认使用部署者作为管理员）
-forge script script/Deploy.s.sol:DeployScript \
-  --rpc-url $SEPOLIA_RPC_URL \
-  --broadcast \
-  --verify
-
-# 或指定其他地址作为默认管理员
-DEFAULT_ADMIN=0x... forge script script/Deploy.s.sol:DeployScript \
-  --rpc-url $SEPOLIA_RPC_URL \
-  --broadcast \
-  --verify
+NFT_ADDRESS=0xYourDeployedContractAddress
+UPGRADE_NAME=Shapella
+MAX_SUPPLY=10000
+WHITELIST_MAX_PER_ADDRESS=5
+PUBLIC_MAX_PER_ADDRESS=1
+WHITELIST_PRICE=0                    # 免费
+PUBLIC_PRICE=0                       # 免费
 ```
 
-记录下合约地址，并更新 `.env` 文件中的 `NFT_ADDRESS`。
-
-#### 1.5. （可选）添加额外管理员
-
-如果需要多个管理员来管理合约：
+执行创建：
 
 ```bash
-# 添加新管理员
-NEW_ADMIN=0x... forge script script/Deploy.s.sol:AddAdminScript \
-  --rpc-url $SEPOLIA_RPC_URL \
+forge script script/Deploy.s.sol:CreateTokenScript \
+  --rpc-url sepolia \
   --broadcast
 ```
 
-#### 2. 生成白名单 Merkle Tree
+### 3. 生成白名单 Merkle Tree
 
-编辑 `scripts/generateMerkleTree.js`，添加白名单地址：
+创建 `whitelist.txt` 文件，每行一个地址：
 
-```javascript
-const whitelist = [
-  '0x1234...',
-  '0x5678...',
-  // 更多地址
-];
+```
+0x1234567890123456789012345678901234567890
+0xabcdefabcdefabcdefabcdefabcdefabcdefabcd
 ```
 
-运行脚本生成 Merkle Root：
+生成 Merkle Root：
 
 ```bash
 npm run generate-merkle
 ```
 
-这将生成 `whitelist-merkle-data.json` 文件，包含：
-- Merkle Root
-- 每个地址的 Proof
-- 白名单地址列表
-
-将 Merkle Root 更新到 `.env` 文件。
-
-#### 3. 设置白名单
+### 4. 设置白名单
 
 ```bash
+export TOKEN_ID=1
+export MERKLE_ROOT=0x...  # 从上一步获取
+
 forge script script/Deploy.s.sol:SetupWhitelistScript \
-  --rpc-url $SEPOLIA_RPC_URL \
+  --rpc-url sepolia \
   --broadcast
 ```
 
-#### 4. 开始白名单阶段
+### 5. 开始白名单阶段
 
 ```bash
+export TOKEN_ID=1
+export WHITELIST_PRICE=0  # 或设置价格，如 10000000000000000 (0.01 ETH)
+
 forge script script/Deploy.s.sol:StartWhitelistPhaseScript \
-  --rpc-url $SEPOLIA_RPC_URL \
+  --rpc-url sepolia \
   --broadcast
 ```
 
-白名单阶段将持续 2 天。
-
-#### 5. 白名单用户 Mint
-
-白名单用户需要使用他们的 Merkle Proof 进行免费 mint：
-
-```javascript
-// 从 whitelist-merkle-data.json 获取 proof
-const proof = merkleData.proofs[userAddress];
-
-// Mint (免费，只需 gas)
-await nft.whitelistMint(amount, proof);
-```
-
-#### 6. 开始公开阶段
-
-2 天后，开始公开阶段：
+### 6. 开始公开阶段
 
 ```bash
+export TOKEN_ID=1
+export PUBLIC_PRICE=0  # 或设置价格
+
 forge script script/Deploy.s.sol:StartPublicPhaseScript \
-  --rpc-url $SEPOLIA_RPC_URL \
+  --rpc-url sepolia \
   --broadcast
 ```
 
-#### 7. 公开 Mint
+### 7. 提取资金（如果是付费铸造）
 
-任何人都可以免费 mint（每地址限 1 个）：
+```bash
+export WITHDRAW_TO=0xYourTreasuryAddress
 
+forge script script/Deploy.s.sol:WithdrawScript \
+  --rpc-url sepolia \
+  --broadcast
+```
+
+## 📖 合约功能详解
+
+### Token 管理
+
+#### 创建新 Token
+
+每次以太坊升级时，创建新的 Token：
+
+```solidity
+function createToken(
+    string memory upgradeName,      // "Shapella", "Dencun", "Fusaka"
+    uint256 maxSupply,              // 10000
+    uint256 whitelistMaxPerAddress, // 5
+    uint256 publicMaxPerAddress,    // 1
+    uint256 whitelistPrice,         // 0 (免费) 或 0.01 ether
+    uint256 publicPrice             // 0 (免费) 或 0.02 ether
+) external returns (uint256 tokenId);
+```
+
+#### 更新 Token 配置
+
+```solidity
+function updateTokenConfig(
+    uint256 tokenId,
+    uint256 maxSupply,
+    uint256 whitelistMaxPerAddress,
+    uint256 publicMaxPerAddress,
+    uint256 whitelistPrice,
+    uint256 publicPrice
+) external;
+```
+
+#### 查询 Token 信息
+
+```solidity
+function getTokenInfo(uint256 tokenId) external view returns (
+    string memory upgradeName,
+    uint256 maxSupply,
+    uint256 currentSupply,
+    uint256 whitelistMaxPerAddress,
+    uint256 publicMaxPerAddress,
+    uint256 whitelistPrice,
+    uint256 publicPrice,
+    MintPhase phase,
+    bool ended
+);
+```
+
+### 用户铸造
+
+#### 白名单铸造
+
+```solidity
+function whitelistMint(
+    uint256 tokenId,
+    uint256 amount,
+    bytes32[] calldata merkleProof
+) external payable;
+```
+
+使用示例：
 ```javascript
-await nft.publicMint(1);
+// 免费铸造
+await nft.whitelistMint(1, 3, proof);
+
+// 付费铸造 (0.01 ETH per NFT)
+await nft.whitelistMint(1, 3, proof, { value: ethers.parseEther("0.03") });
 ```
 
-#### 8. 永久结束 Mint
+#### 公开铸造
 
-公开阶段结束后（2 天），可以永久销毁剩余 NFT：
-
-```bash
-forge script script/Deploy.s.sol:EndMintPermanentlyScript \
-  --rpc-url $SEPOLIA_RPC_URL \
-  --broadcast
+```solidity
+function publicMint(uint256 tokenId, uint256 amount) external payable;
 ```
 
-此后将无法再 mint 任何 NFT。
+使用示例：
+```javascript
+// 免费铸造
+await nft.publicMint(1, 1);
 
-#### 9. （可选）管理员管理
+// 付费铸造
+await nft.publicMint(1, 1, { value: ethers.parseEther("0.02") });
+```
+
+### 管理功能
+
+#### 管理员铸造（免费）
+
+```solidity
+function adminMint(uint256 tokenId, address to, uint256 amount) external;
+```
+
+#### 结束铸造
+
+```solidity
+function endMintPermanently(uint256 tokenId) external;
+```
+
+#### 提取资金
+
+```solidity
+function withdraw(address payable to) external;
+```
+
+#### 管理员管理
+
+```solidity
+function addAdmin(address account) external;
+function removeAdmin(address account) external;
+function isAdmin(address account) external view returns (bool);
+```
+
+## 🎯 使用场景
+
+### 场景 1: 免费铸造活动
 
 ```bash
-# 添加新管理员
-NEW_ADMIN=0x... forge script script/Deploy.s.sol:AddAdminScript \
-  --rpc-url $SEPOLIA_RPC_URL \
-  --broadcast
+# 创建免费 Token
+export UPGRADE_NAME="Shapella"
+export MAX_SUPPLY=10000
+export WHITELIST_MAX_PER_ADDRESS=5
+export PUBLIC_MAX_PER_ADDRESS=1
+export WHITELIST_PRICE=0
+export PUBLIC_PRICE=0
+
+forge script script/Deploy.s.sol:CreateTokenScript --rpc-url sepolia --broadcast
+```
+
+### 场景 2: 付费铸造活动
+
+```bash
+# 创建付费 Token
+export UPGRADE_NAME="Dencun"
+export MAX_SUPPLY=8000
+export WHITELIST_MAX_PER_ADDRESS=3
+export PUBLIC_MAX_PER_ADDRESS=2
+export WHITELIST_PRICE=10000000000000000   # 0.01 ETH
+export PUBLIC_PRICE=20000000000000000      # 0.02 ETH
+
+forge script script/Deploy.s.sol:CreateTokenScript --rpc-url sepolia --broadcast
+```
+
+### 场景 3: 白名单免费，公开付费
+
+```bash
+export WHITELIST_PRICE=0
+export PUBLIC_PRICE=10000000000000000   # 0.01 ETH
+```
+
+### 场景 4: 多个系列并行管理
+
+```solidity
+// Token 1: Shapella (已结束)
+nft.endMintPermanently(1);
+
+// Token 2: Dencun (白名单中，免费)
+nft.startWhitelistPhase(2, 0);
+
+// Token 3: Fusaka (未开始，已配置为付费)
+// 等待合适时机启动
+```
+
+## 📊 数据隔离
+
+每个 Token 的以下数据完全独立：
+
+| 数据项 | 说明 |
+|--------|------|
+| maxSupply | 最大供应量 |
+| whitelistMaxPerAddress | 白名单每地址限额 |
+| publicMaxPerAddress | 公开每地址限额 |
+| whitelistPrice | 白名单价格 |
+| publicPrice | 公开价格 |
+| merkleRoot | 白名单 Merkle Root |
+| phase | 当前阶段状态 |
+| whitelistMinted | 用户白名单铸造记录 |
+| publicMinted | 用户公开铸造记录 |
+
+## 🔐 权限系统
+
+### 角色定义
+
+- **DEFAULT_ADMIN_ROLE** (最高权限)
+  - 添加/移除 ADMIN_ROLE
+  - 拥有所有 ADMIN_ROLE 权限
+
+- **ADMIN_ROLE** (操作权限)
+  - 创建 Token
+  - 更新配置
+  - 设置白名单
+  - 开始/结束阶段
+  - 管理员铸造
+  - 提取资金
+
+### 多管理员示例
+
+```bash
+# 添加管理员
+export NEW_ADMIN=0x...
+forge script script/Deploy.s.sol:AddAdminScript --rpc-url sepolia --broadcast
 
 # 移除管理员
-ADMIN_TO_REMOVE=0x... forge script script/Deploy.s.sol:RemoveAdminScript \
-  --rpc-url $SEPOLIA_RPC_URL \
-  --broadcast
-
-# 管理员 mint（空投等）
-RECIPIENT_ADDRESS=0x... MINT_AMOUNT=100 forge script script/Deploy.s.sol:AdminMintScript \
-  --rpc-url $SEPOLIA_RPC_URL \
-  --broadcast
-
-# 查询管理员状态
-CHECK_ADDRESS=0x... forge script script/Deploy.s.sol:QueryStatusScript \
-  --rpc-url $SEPOLIA_RPC_URL
+export ADMIN_TO_REMOVE=0x...
+forge script script/Deploy.s.sol:RemoveAdminScript --rpc-url sepolia --broadcast
 ```
 
-## 合约参数
+## 🧪 测试覆盖
 
-### 核心常量
+项目包含 54 个全面的测试用例：
 
-```solidity
-TOKEN_ID = 1                           // NFT Token ID（固定值）
-MAX_SUPPLY = 10,000                    // 最大供应量
-WHITELIST_MAX_PER_ADDRESS = 5         // 白名单阶段每地址最大 mint 数量
-PUBLIC_MAX_PER_ADDRESS = 1            // 公开阶段每地址最大 mint 数量
-PHASE_DURATION = 2 days                // 每个阶段持续时间
-```
+### 测试分类
 
-## 合约功能
+- ✅ **基础功能** (8 个测试)
+  - Token 创建、配置、查询
+  - 默认价格验证
 
-### 管理员功能
+- ✅ **管理员功能** (3 个测试)
+  - 添加/移除管理员
+  - 权限检查
 
-#### DEFAULT_ADMIN_ROLE（超级管理员）
+- ✅ **阶段管理** (8 个测试)
+  - 白名单/公开阶段启动
+  - 价格设置
 
-```solidity
-// 添加管理员
-addAdmin(address account)
+- ✅ **铸造功能** (12 个测试)
+  - 免费/付费铸造
+  - 自动退款
+  - 配额限制
 
-// 移除管理员
-removeAdmin(address account)
-```
+- ✅ **价格场景** (10 个测试)
+  - 各种价格组合
+  - 多Token不同价格
 
-#### ADMIN_ROLE（普通管理员）
+- ✅ **资金管理** (5 个测试)
+  - 资金提取
+  - 权限验证
 
-```solidity
-// 设置白名单 Merkle Root
-setMerkleRoot(bytes32 merkleRoot)
+- ✅ **数据隔离** (3 个测试)
+  - Token 间隔离验证
 
-// 开始白名单阶段
-startWhitelistPhase()
-
-// 开始公开阶段
-startPublicPhase()
-
-// 永久结束 mint
-endMintPermanently()
-
-// 管理员铸造（不受阶段和数量限制）
-adminMint(address to, uint256 amount)
-
-// 更新配置
-setBaseURI(string newBaseURI)
-```
-
-#### 查询功能
-
-```solidity
-// 检查是否是管理员
-isAdmin(address account) → bool
-
-// 检查是否拥有特定角色
-hasRole(bytes32 role, address account) → bool
-```
-
-### 用户功能
-
-```solidity
-// 白名单 mint（免费）
-whitelistMint(uint256 amount, bytes32[] calldata merkleProof)
-
-// 公开 mint（免费）
-publicMint(uint256 amount)
-
-// 销毁 NFT
-burn(address account, uint256 tokenId, uint256 amount)
-
-// 批量销毁 NFT
-burnBatch(address account, uint256[] memory ids, uint256[] memory amounts)
-
-// 转账
-safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes data)
-
-// 批量转账
-safeBatchTransferFrom(address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes data)
-
-// 查询
-balanceOf(address account, uint256 id)
-remainingSupply()
-whitelistRemainingForAddress(address account)
-publicRemainingForAddress(address account)
-getCurrentPhase()
-```
-
-### 查询功能
-
-```solidity
-// 获取当前阶段
-getCurrentPhase() → MintPhase
-
-// 获取剩余供应量
-remainingSupply() → uint256
-
-// 获取地址在白名单阶段剩余可 mint 数量
-whitelistRemainingForAddress(address) → uint256
-
-// 获取地址在公开阶段剩余可 mint 数量
-publicRemainingForAddress(address) → uint256
-
-// 批量验证白名单
-verifyWhitelist(address[] accounts, bytes32[][] proofs) → bool[]
-
-// ERC1155 标准接口
-balanceOfBatch(address[] accounts, uint256[] ids) → uint256[]
-isApprovedForAll(address account, address operator) → bool
-setApprovalForAll(address operator, bool approved)
-
-// ERC165 接口检查
-supportsInterface(bytes4 interfaceId) → bool
-```
-
-## 使用示例
-
-### 前端集成示例
-
-```javascript
-import { ethers } from 'ethers';
-import merkleData from './whitelist-merkle-data.json';
-
-// 连接钱包
-const provider = new ethers.BrowserProvider(window.ethereum);
-const signer = await provider.getSigner();
-const nft = new ethers.Contract(NFT_ADDRESS, ABI, signer);
-
-// 检查当前阶段
-const phase = await nft.getCurrentPhase();
-// 0: NotStarted, 1: Whitelist, 2: Public, 3: Ended
-
-// 白名单 mint（免费，只需 gas）
-async function whitelistMint(amount) {
-  const userAddress = await signer.getAddress();
-  const proof = merkleData.proofs[userAddress];
-  
-  if (!proof) {
-    throw new Error('Address not in whitelist');
-  }
-  
-  // 免费 mint，不需要发送 ETH
-  const tx = await nft.whitelistMint(amount, proof);
-  await tx.wait();
-  console.log('Minted successfully!');
-}
-
-// 公开 mint（免费，只需 gas）
-async function publicMint(amount) {
-  // 免费 mint，不需要发送 ETH
-  const tx = await nft.publicMint(amount);
-  await tx.wait();
-  console.log('Minted successfully!');
-}
-
-// 查询用户余额
-const balance = await nft.balanceOf(userAddress, 1);
-console.log('User balance:', balance.toString());
-
-// 查询剩余可 mint 数量
-const remaining = await nft.remainingSupply();
-console.log('Remaining supply:', remaining.toString());
-
-// 批量验证白名单
-async function verifyMultipleAddresses(addresses) {
-  const proofs = addresses.map(addr => merkleData.proofs[addr] || []);
-  const results = await nft.verifyWhitelist(addresses, proofs);
-  
-  addresses.forEach((addr, i) => {
-    console.log(`${addr}: ${results[i] ? '✓ 在白名单' : '✗ 不在白名单'}`);
-  });
-  
-  return results;
-}
-```
-
-## 权限系统
-
-项目使用 OpenZeppelin AccessControl 实现灵活的权限管理：
-
-### 角色说明
-
-- **DEFAULT_ADMIN_ROLE（超级管理员）**
-  - 可以添加和移除 ADMIN_ROLE
-  - 拥有所有 ADMIN_ROLE 的权限
-  - 通常由项目方持有
-
-- **ADMIN_ROLE（普通管理员）**
-  - 可以管理 mint 阶段（开始白名单/公开阶段）
-  - 可以设置白名单 Merkle Root
-  - 可以进行管理员 mint（空投等）
-  - 可以永久结束 mint
-  - 可以更新 baseURI
-
-### 多管理员优势
-
-- ✅ 分散风险：避免单点故障
-- ✅ 团队协作：多人可以管理合约
-- ✅ 灵活管理：可以随时添加/移除管理员
-- ✅ 权限分离：超级管理员和普通管理员分离
-
-## 安全考虑
-
-- ✅ 使用 OpenZeppelin 审计过的合约库
-- ✅ 实现了多层访问控制 (AccessControl)
-- ✅ 防止重入攻击
-- ✅ 供应量限制检查
-- ✅ 阶段时间验证
-- ✅ Merkle Tree 白名单验证（gas 优化）
-- ✅ 永久销毁机制防止意外增发
-- ✅ 免费铸造降低用户门槛
-- ✅ 多管理员机制分散风险
-
-## 测试覆盖
-
-项目包含全面的测试套件（45+ 测试用例）：
-
-- ✅ 合约初始化测试
-- ✅ AccessControl 权限测试（管理员添加/移除）
-- ✅ Merkle Root 设置和验证
-- ✅ 阶段转换测试
-- ✅ 白名单 mint（含 Merkle Proof 验证）
-- ✅ 公开 mint
-- ✅ 数量限制测试
-- ✅ 永久结束 mint 测试
-- ✅ 销毁和转账功能测试
-- ✅ 管理员 mint 测试
-- ✅ 多管理员权限测试
-- ✅ 边界条件测试
-- ✅ Fuzz 测试
-- ✅ 完整流程集成测试
+- ✅ **边界情况** (5 个测试)
+  - 错误处理
+  - 异常场景
 
 运行测试：
+```bash
+forge test --offline
+```
 
+查看详细结果：
 ```bash
 forge test -vvv
 ```
 
-## Gas 优化
+## 📦 脚本工具
 
-合约经过优化以降低 gas 消耗：
+项目提供了丰富的管理脚本：
 
-- 使用 Merkle Tree 而非映射存储白名单（节省大量存储成本）
-- 使用 `uint256` 避免额外的转换
-- 合理的存储布局
-- 批量操作支持
-- Solidity 0.8.24 的优化器
+| 脚本 | 功能 |
+|------|------|
+| `DeployScript` | 部署主合约 |
+| `CreateTokenScript` | 创建新 Token |
+| `SetupWhitelistScript` | 设置白名单 |
+| `StartWhitelistPhaseScript` | 开始白名单阶段 |
+| `StartPublicPhaseScript` | 开始公开阶段 |
+| `EndMintPermanentlyScript` | 永久结束铸造 |
+| `AdminMintScript` | 管理员铸造 |
+| `WithdrawScript` | 提取资金 |
+| `QueryTokenInfoScript` | 查询 Token 信息 |
+| `AddAdminScript` | 添加管理员 |
+| `RemoveAdminScript` | 移除管理员 |
 
-查看 gas 报告：
+## 🎨 Metadata
 
-```bash
-forge test --gas-report
+项目包含 NFT metadata 模板：
+
+```json
+{
+  "name": "Memory of Ethereum #1",
+  "description": "Memory of Ethereum (Fusaka) is a limited collection...",
+  "image": "ipfs://YOUR_CID/image.png",
+  "external_url": "https://ethereum.org",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Memory of Ethereum"
+    }
+  ]
+}
 ```
 
-## 常见问题
+上传到 IPFS 后，更新 BASE_URI：
 
-**Q: Mint 需要支付费用吗？**
-A: 不需要。本项目的 mint 是完全免费的，用户只需支付以太坊网络的 gas 费用。
+```bash
+# 在部署脚本中设置
+string constant BASE_URI = "ipfs://YOUR_CID/";
+```
 
-**Q: 如何添加白名单地址？**
-A: 编辑 `scripts/generateMerkleTree.js` 中的 whitelist 数组，然后运行 `npm run generate-merkle`。
+## ⚙️ 配置说明
 
-**Q: 可以更改阶段持续时间吗？**
-A: 阶段持续时间（2天）是合约中的常量。如需更改，需要在部署前修改合约代码。
+### Foundry 配置 (foundry.toml)
 
-**Q: 白名单用户可以在公开阶段继续 mint 吗？**
-A: 可以，但只能 mint 1 个（公开阶段限制）。白名单和公开阶段的 mint 数量是分别计算的。
+```toml
+[profile.default]
+solc = "0.8.24"
+optimizer = true
+optimizer_runs = 200
+via_ir = true  # 重要：解决 Stack too deep 问题
 
-**Q: 如果没有调用 `endMintPermanently()`，还能 mint 吗？**
-A: 两个阶段结束后，合约会自动进入 Ended 状态，阻止普通用户 mint。但管理员仍可以调用 `adminMint()` 进行空投等操作，除非调用了 `endMintPermanently()`。
+[rpc_endpoints]
+sepolia = "${SEPOLIA_RPC_URL}"
+mainnet = "${MAINNET_RPC_URL}"
 
-**Q: `endMintPermanently()` 会实际销毁代币吗？**
-A: 不会销毁已经 mint 的代币（用户持有的 NFT 不受影响）。该函数只是将 `mintEnded` 标志设为 true，永久禁止所有 mint 操作（包括 `adminMint()`），确保总供应量不会再增加。
+[etherscan]
+sepolia = { key = "${ETHERSCAN_API_KEY}" }
+mainnet = { key = "${ETHERSCAN_API_KEY}" }
+```
 
-**Q: 多管理员模式安全吗？**
-A: 是的。使用 OpenZeppelin AccessControl 实现，经过广泛审计。超级管理员（DEFAULT_ADMIN_ROLE）可以管理普通管理员（ADMIN_ROLE），确保权限可控。
+### Gas 优化
 
-**Q: 如何添加或移除管理员？**
-A: 只有超级管理员可以通过 `addAdmin()` 和 `removeAdmin()` 函数添加或移除普通管理员。也可以使用提供的部署脚本 `AddAdminScript` 和 `RemoveAdminScript`。
+- ✅ 使用 `via_ir` 编译模式
+- ✅ Merkle Tree 白名单验证
+- ✅ 优化的存储布局
+- ✅ 批量操作支持
 
-**Q: 管理员和超级管理员有什么区别？**
-A: 超级管理员（DEFAULT_ADMIN_ROLE）可以管理管理员角色，而普通管理员（ADMIN_ROLE）只能执行合约管理操作（如开始 mint 阶段、设置白名单等），不能添加或移除其他管理员。
+## 🔍 合约验证
 
-**Q: 为什么使用 ERC-1155 而不是 ERC-721？**
-A: ERC-1155 支持批量操作，gas 效率更高。虽然本项目只使用单一 Token ID（ID=1），但可以充分利用 ERC-1155 的批量转账和查询功能，降低用户操作成本。
+### 自动验证
 
-**Q: Token ID 固定为 1，可以有多个 NFT 吗？**
-A: 可以。ERC-1155 是"多代币"标准，每个 Token ID 可以有多个份额。本项目使用 Token ID = 1，最多可以有 10,000 份（MAX_SUPPLY）。每个用户持有的是该 Token ID 的"份额"数量。
+部署时自动验证：
+```bash
+npm run deploy:sepolia
+```
 
-## 许可证
+### 手动验证
+
+如果自动验证失败：
+```bash
+export CONTRACT_ADDRESS=0x...
+export BASE_URI=ipfs://YOUR_CID/
+export DEFAULT_ADMIN=0x...
+
+npm run verify:sepolia
+```
+
+详细说明请参考 [VERIFY.md](./VERIFY.md)
+
+## 📚 相关文档
+
+- [Foundry Book](https://book.getfoundry.sh/)
+- [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts/)
+- [ERC-1155 Standard](https://eips.ethereum.org/EIPS/eip-1155)
+- [Merkle Tree 说明](https://en.wikipedia.org/wiki/Merkle_tree)
+
+## 🛡️ 安全考虑
+
+### 已实施的安全措施
+
+- ✅ OpenZeppelin 标准合约库
+- ✅ 完整的单元测试覆盖
+- ✅ 权限控制和访问限制
+- ✅ 重入攻击保护（使用 OpenZeppelin 的 ReentrancyGuard 模式）
+- ✅ 整数溢出保护（Solidity 0.8+）
+- ✅ 自动退款机制
+
+### 审计建议
+
+在主网部署前建议：
+- 🔒 进行专业的安全审计
+- 🔒 在测试网进行充分测试
+- 🔒 使用多签钱包管理 DEFAULT_ADMIN_ROLE
+- 🔒 设置合理的供应量和价格
+- 🔒 准备应急暂停机制
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📄 许可证
 
 MIT License
 
-## 致谢
+## 📞 联系方式
 
-- [OpenZeppelin](https://www.openzeppelin.com/) - 安全的智能合约库
-- [Foundry](https://github.com/foundry-rs/foundry) - 快速的以太坊开发工具链
-- [merkletreejs](https://github.com/miguelmota/merkletreejs) - Merkle Tree 实现
+- GitHub: [Your GitHub]
+- Twitter: [@YourTwitter]
+- Discord: [Your Discord]
 
 ---
 
-**警告**: 在主网部署前，请务必进行完整的安全审计。
+**Built with ❤️ for the Ethereum Community**
