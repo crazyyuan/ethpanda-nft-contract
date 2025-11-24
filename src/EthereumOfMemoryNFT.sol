@@ -9,11 +9,11 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
- * @title EthPandaNFT
+ * @title EthereumOfMemoryNFT
  * @dev ERC-1155 NFT 合约，支持白名单和公开 mint 阶段
- * @notice 以太熊猫 NFT 集合，总供应量 10000，使用 AccessControl 实现多管理员
+ * @notice Memory of Ethereum NFT 集合，总供应量 10000，使用 AccessControl 实现多管理员
  */
-contract EthPandaNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply {
+contract EthereumOfMemoryNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply {
     using Strings for uint256;
 
     // 角色定义
@@ -38,9 +38,6 @@ contract EthPandaNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply {
     // 公开阶段每地址最大 mint 数量
     uint256 public constant PUBLIC_MAX_PER_ADDRESS = 1;
     
-    // 阶段持续时间（2天）
-    uint256 public constant PHASE_DURATION = 2 days;
-    
     // Merkle root for whitelist
     bytes32 public merkleRoot;
     
@@ -60,7 +57,7 @@ contract EthPandaNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply {
     mapping(address => uint256) public publicMinted;
 
     // Mint 阶段枚举
-enum MintPhase {
+    enum MintPhase {
         NotStarted,
         Whitelist,
         Public,
@@ -112,27 +109,13 @@ enum MintPhase {
             return MintPhase.NotStarted;
         }
         
-        if (block.timestamp < whitelistStartTime) {
-            return MintPhase.NotStarted;
-        }
-        
-        if (block.timestamp < whitelistStartTime + PHASE_DURATION) {
+        // 白名单阶段已开启但公开阶段未开启
+        if (publicStartTime == 0) {
             return MintPhase.Whitelist;
         }
         
-        if (publicStartTime == 0) {
-            return MintPhase.Ended;
-        }
-        
-        if (block.timestamp < publicStartTime) {
-            return MintPhase.Ended;
-        }
-        
-        if (block.timestamp < publicStartTime + PHASE_DURATION) {
-            return MintPhase.Public;
-        }
-        
-        return MintPhase.Ended;
+        // 公开阶段已开启
+        return MintPhase.Public;
     }
 
     /**
@@ -187,10 +170,6 @@ enum MintPhase {
      */
     function startPublicPhase() external onlyRole(ADMIN_ROLE) {
         require(whitelistStartTime > 0, "Whitelist phase not started");
-        require(
-            block.timestamp >= whitelistStartTime + PHASE_DURATION,
-            "Whitelist phase not ended"
-        );
         require(publicStartTime == 0, "Public phase already started");
         
         publicStartTime = block.timestamp;
@@ -274,14 +253,9 @@ enum MintPhase {
 
     /**
      * @dev 永久结束 mint 并销毁所有剩余 NFT
-     * 只能在公开阶段结束后调用
      */
     function endMintPermanently() external onlyRole(ADMIN_ROLE) {
         require(!mintEnded, "Mint already ended");
-        require(
-            getCurrentPhase() == MintPhase.Ended,
-            "Mint phases not completed"
-        );
         
         uint256 currentSupply = totalSupply(TOKEN_ID);
         uint256 remaining = MAX_SUPPLY - currentSupply;
@@ -374,7 +348,6 @@ enum MintPhase {
     }
 
     // 必需的覆盖函数
-
     function _update(
         address from,
         address to,

@@ -2,20 +2,21 @@
 pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
-import {EthPandaNFT} from "../src/EthPandaNFT.sol";
+import {EthereumOfMemoryNFT} from "../src/EthereumOfMemoryNFT.sol";
 
 /**
  * @title Deploy Script
- * @dev 部署 EthPandaNFT 合约的脚本
+ * @dev 部署 EthereumOfMemoryNFT 合约的脚本
  * 
  * 使用方法:
  * forge script script/Deploy.s.sol:DeployScript --rpc-url <RPC_URL> --broadcast --verify
  */
 contract DeployScript is Script {
     // 配置参数
-    string constant NAME = "EthPanda NFT";
-    string constant SYMBOL = "EPNFT";
-    string constant BASE_URI = "https://api.ethpanda.io/metadata/";
+    string constant NAME = "Memory of Ethereum";
+    string constant SYMBOL = "Fusaka";
+    string constant BASE_URI = "https://apricot-embarrassed-locust-895.mypinata.cloud/ipfs/bafybeibbwkzoznk24jn3ulqm6xkn2iq5mjubphgmtwydidpdgmdtmm76ma/";
+    
     
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
@@ -28,9 +29,9 @@ contract DeployScript is Script {
         vm.startBroadcast(deployerPrivateKey);
         
         // 部署合约
-        EthPandaNFT nft = new EthPandaNFT(NAME, SYMBOL, BASE_URI, defaultAdmin);
+        EthereumOfMemoryNFT nft = new EthereumOfMemoryNFT(NAME, SYMBOL, BASE_URI, defaultAdmin);
         
-        console.log("=== EthPandaNFT Deployed ===");
+        console.log("=== EthereumOfMemoryNFT Deployed ===");
         console.log("Contract Address:", address(nft));
         console.log("Default Admin:", defaultAdmin);
         console.log("Is Admin:", nft.hasRole(ADMIN_ROLE, defaultAdmin));
@@ -61,7 +62,7 @@ contract SetupWhitelistScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthPandaNFT nft = EthPandaNFT(nftAddress);
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
         
         // 设置 Merkle Root
         nft.setMerkleRoot(merkleRoot);
@@ -88,7 +89,7 @@ contract StartWhitelistPhaseScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthPandaNFT nft = EthPandaNFT(nftAddress);
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
         
         // 开始白名单阶段
         nft.startWhitelistPhase();
@@ -96,7 +97,6 @@ contract StartWhitelistPhaseScript is Script {
         console.log("=== Whitelist Phase Started ===");
         console.log("NFT Address:", address(nft));
         console.log("Start Time:", nft.whitelistStartTime());
-        console.log("End Time:", nft.whitelistStartTime() + nft.PHASE_DURATION());
         console.log("Current Phase:", uint256(nft.getCurrentPhase()));
         
         vm.stopBroadcast();
@@ -117,7 +117,7 @@ contract StartPublicPhaseScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthPandaNFT nft = EthPandaNFT(nftAddress);
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
         
         // 开始公开阶段
         nft.startPublicPhase();
@@ -125,7 +125,6 @@ contract StartPublicPhaseScript is Script {
         console.log("=== Public Phase Started ===");
         console.log("NFT Address:", address(nft));
         console.log("Start Time:", nft.publicStartTime());
-        console.log("End Time:", nft.publicStartTime() + nft.PHASE_DURATION());
         console.log("Current Phase:", uint256(nft.getCurrentPhase()));
         
         vm.stopBroadcast();
@@ -146,7 +145,7 @@ contract EndMintPermanentlyScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthPandaNFT nft = EthPandaNFT(nftAddress);
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
         
         uint256 currentSupply = nft.totalSupply(nft.TOKEN_ID());
         uint256 remainingSupply = nft.remainingSupply();
@@ -182,7 +181,7 @@ contract AddAdminScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthPandaNFT nft = EthPandaNFT(nftAddress);
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
         
         console.log("=== Adding Admin ===");
         console.log("NFT Address:", address(nft));
@@ -211,7 +210,7 @@ contract RemoveAdminScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthPandaNFT nft = EthPandaNFT(nftAddress);
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
         
         console.log("=== Removing Admin ===");
         console.log("NFT Address:", address(nft));
@@ -241,7 +240,7 @@ contract AdminMintScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthPandaNFT nft = EthPandaNFT(nftAddress);
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
         
         console.log("=== Admin Mint ===");
         console.log("Recipient:", recipient);
@@ -270,7 +269,7 @@ contract QueryStatusScript is Script {
     
     function run() external view {
         address nftAddress = vm.envAddress("NFT_ADDRESS");
-        EthPandaNFT nft = EthPandaNFT(nftAddress);
+        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(nftAddress);
         
         console.log("=== Contract Status ===");
         console.log("Contract Address:", address(nft));
@@ -298,7 +297,6 @@ contract QueryStatusScript is Script {
         console.log("Current Phase:", uint256(nft.getCurrentPhase()));
         console.log("Whitelist Start Time:", nft.whitelistStartTime());
         console.log("Public Start Time:", nft.publicStartTime());
-        console.log("Phase Duration:", nft.PHASE_DURATION());
         console.log("");
         
         console.log("=== Mint Limits ===");

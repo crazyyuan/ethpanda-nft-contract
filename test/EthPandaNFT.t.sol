@@ -2,10 +2,10 @@
 pragma solidity ^0.8.24;
 
 import {Test, console} from "forge-std/Test.sol";
-import {EthPandaNFT} from "../src/EthPandaNFT.sol";
+import {EthereumOfMemoryNFT} from "../src/EthereumOfMemoryNFT.sol";
 
-contract EthPandaNFTTest is Test {
-    EthPandaNFT public nft;
+contract EthereumOfMemoryNFTTest is Test {
+    EthereumOfMemoryNFT public nft;
     
     address public admin;
     address public admin2;
@@ -13,9 +13,9 @@ contract EthPandaNFTTest is Test {
     address public user2;
     address public user3;
     
-    string constant NAME = "EthPanda NFT";
-    string constant SYMBOL = "EPNFT";
-    string constant BASE_URI = "https://api.ethpanda.io/metadata/";
+    string constant NAME = "Memory of Ethereum";
+    string constant SYMBOL = "Fusaka";
+    string constant BASE_URI = "https://apricot-embarrassed-locust-895.mypinata.cloud/ipfs/bafybeie6nqmzpaavpqzh55n5ir4wgqdpp4tb6a5yelnotbfulyox6izhq4/";
     
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
@@ -39,7 +39,7 @@ contract EthPandaNFTTest is Test {
         user2 = makeAddr("user2");
         user3 = makeAddr("user3");
         
-        nft = new EthPandaNFT(NAME, SYMBOL, BASE_URI, admin);
+        nft = new EthereumOfMemoryNFT(NAME, SYMBOL, BASE_URI, admin);
         
         // 为测试用户提供 ETH
         vm.deal(user1, 10 ether);
@@ -72,7 +72,7 @@ contract EthPandaNFTTest is Test {
         assertEq(nft.symbol(), SYMBOL);
         assertTrue(nft.hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(nft.hasRole(ADMIN_ROLE, admin));
-        assertEq(uint256(nft.getCurrentPhase()), uint256(EthPandaNFT.MintPhase.NotStarted));
+        assertEq(uint256(nft.getCurrentPhase()), uint256(EthereumOfMemoryNFT.MintPhase.NotStarted));
         assertEq(nft.mintEnded(), false);
     }
 
@@ -81,7 +81,6 @@ contract EthPandaNFTTest is Test {
         assertEq(nft.MAX_SUPPLY(), 10000);
         assertEq(nft.WHITELIST_MAX_PER_ADDRESS(), 5);
         assertEq(nft.PUBLIC_MAX_PER_ADDRESS(), 1);
-        assertEq(nft.PHASE_DURATION(), 2 days);
     }
 
     function testSetMerkleRoot() public {
@@ -157,7 +156,7 @@ contract EthPandaNFTTest is Test {
         nft.startWhitelistPhase();
         
         assertEq(nft.whitelistStartTime(), block.timestamp);
-        assertEq(uint256(nft.getCurrentPhase()), uint256(EthPandaNFT.MintPhase.Whitelist));
+        assertEq(uint256(nft.getCurrentPhase()), uint256(EthereumOfMemoryNFT.MintPhase.Whitelist));
     }
 
     function testStartWhitelistPhaseOnlyAdmin() public {
@@ -167,7 +166,7 @@ contract EthPandaNFTTest is Test {
     }
 
     function testStartWhitelistPhaseRequiresMerkleRoot() public {
-        EthPandaNFT nft2 = new EthPandaNFT(NAME, SYMBOL, BASE_URI, admin);
+        EthereumOfMemoryNFT nft2 = new EthereumOfMemoryNFT(NAME, SYMBOL, BASE_URI, admin);
         vm.expectRevert("Merkle root not set");
         nft2.startWhitelistPhase();
     }
@@ -191,31 +190,17 @@ contract EthPandaNFTTest is Test {
     function testStartPublicPhase() public {
         nft.startWhitelistPhase();
         
-        // 快进 2 天
-        vm.warp(block.timestamp + 2 days);
-        
         vm.expectEmit(false, false, false, false);
         emit PublicPhaseStarted(block.timestamp);
         
         nft.startPublicPhase();
         
         assertEq(nft.publicStartTime(), block.timestamp);
-        assertEq(uint256(nft.getCurrentPhase()), uint256(EthPandaNFT.MintPhase.Public));
-    }
-
-    function testStartPublicPhaseRequiresWhitelistEnded() public {
-        nft.startWhitelistPhase();
-        
-        // 只过 1 天
-        vm.warp(block.timestamp + 1 days);
-        
-        vm.expectRevert("Whitelist phase not ended");
-        nft.startPublicPhase();
+        assertEq(uint256(nft.getCurrentPhase()), uint256(EthereumOfMemoryNFT.MintPhase.Public));
     }
 
     function testCannotStartPublicPhaseTwice() public {
         nft.startWhitelistPhase();
-        vm.warp(block.timestamp + 2 days);
         nft.startPublicPhase();
         
         vm.expectRevert("Public phase already started");
@@ -280,7 +265,6 @@ contract EthPandaNFTTest is Test {
 
     function testPublicMint() public {
         nft.startWhitelistPhase();
-        vm.warp(block.timestamp + 2 days);
         nft.startPublicPhase();
         
         vm.prank(user3);
@@ -295,7 +279,6 @@ contract EthPandaNFTTest is Test {
 
     function testPublicMintExceedsAllocation() public {
         nft.startWhitelistPhase();
-        vm.warp(block.timestamp + 2 days);
         nft.startPublicPhase();
         
         // 先 mint 1 个
@@ -348,9 +331,7 @@ contract EthPandaNFTTest is Test {
 
     function testEndMintPermanently() public {
         nft.startWhitelistPhase();
-        vm.warp(block.timestamp + 2 days);
         nft.startPublicPhase();
-        vm.warp(block.timestamp + 2 days);
         
         // Mint 一些 NFT
         nft.adminMint(user1, 100);
@@ -364,22 +345,13 @@ contract EthPandaNFTTest is Test {
         nft.endMintPermanently();
         
         assertEq(nft.mintEnded(), true);
-        assertEq(uint256(nft.getCurrentPhase()), uint256(EthPandaNFT.MintPhase.Ended));
+        assertEq(uint256(nft.getCurrentPhase()), uint256(EthereumOfMemoryNFT.MintPhase.Ended));
         assertEq(nft.remainingSupply(), 0);
-    }
-
-    function testEndMintPermanentlyRequiresPhaseEnded() public {
-        nft.startWhitelistPhase();
-        
-        vm.expectRevert("Mint phases not completed");
-        nft.endMintPermanently();
     }
 
     function testCannotMintAfterEndedPermanently() public {
         nft.startWhitelistPhase();
-        vm.warp(block.timestamp + 2 days);
         nft.startPublicPhase();
-        vm.warp(block.timestamp + 2 days);
         
         nft.endMintPermanently();
         
@@ -428,9 +400,7 @@ contract EthPandaNFTTest is Test {
         
         // End mint permanently
         nft.startWhitelistPhase();
-        vm.warp(block.timestamp + 2 days);
         nft.startPublicPhase();
-        vm.warp(block.timestamp + 2 days);
         nft.endMintPermanently();
         
         assertEq(nft.remainingSupply(), 0);
@@ -449,7 +419,6 @@ contract EthPandaNFTTest is Test {
 
     function testPublicRemainingForAddress() public {
         nft.startWhitelistPhase();
-        vm.warp(block.timestamp + 2 days);
         nft.startPublicPhase();
         
         assertEq(nft.publicRemainingForAddress(user3), 1);
@@ -509,7 +478,7 @@ contract EthPandaNFTTest is Test {
     function testCompleteFlow() public {
         // 1. 设置白名单并开始白名单阶段
         nft.startWhitelistPhase();
-        assertEq(uint256(nft.getCurrentPhase()), uint256(EthPandaNFT.MintPhase.Whitelist));
+        assertEq(uint256(nft.getCurrentPhase()), uint256(EthereumOfMemoryNFT.MintPhase.Whitelist));
         
         // 2. 白名单用户 mint
         vm.prank(user1);
@@ -520,21 +489,16 @@ contract EthPandaNFTTest is Test {
         nft.whitelistMint(3, merkleProof2);
         assertEq(nft.balanceOf(user2, nft.TOKEN_ID()), 3);
         
-        // 3. 快进到公开阶段
-        vm.warp(block.timestamp + 2 days);
+        // 3. 开启公开阶段
         nft.startPublicPhase();
-        assertEq(uint256(nft.getCurrentPhase()), uint256(EthPandaNFT.MintPhase.Public));
+        assertEq(uint256(nft.getCurrentPhase()), uint256(EthereumOfMemoryNFT.MintPhase.Public));
         
         // 4. 公开 mint
         vm.prank(user3);
         nft.publicMint(1);
         assertEq(nft.balanceOf(user3, nft.TOKEN_ID()), 1);
         
-        // 5. 快进到公开阶段结束
-        vm.warp(block.timestamp + 2 days);
-        assertEq(uint256(nft.getCurrentPhase()), uint256(EthPandaNFT.MintPhase.Ended));
-        
-        // 6. 永久结束 mint
+        // 5. 永久结束 mint
         nft.endMintPermanently();
         
         assertEq(nft.mintEnded(), true);

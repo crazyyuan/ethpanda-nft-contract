@@ -1,6 +1,6 @@
 # EthPanda NFT
 
-以太熊猫 NFT 智能合约项目 - 基于 ERC-1155 标准的 NFT 集合，支持白名单和公开铸造阶段。
+ETHPanda NFT 智能合约项目 - 基于 ERC-1155 标准的 NFT 集合，支持白名单和公开铸造阶段。
 
 ## 项目概述
 
@@ -37,9 +37,9 @@ EthPanda NFT 是一个基于以太坊的 NFT 项目，使用 ERC-1155 标准，�
 ```
 ethpanda-nft/
 ├── src/
-│   └── EthPandaNFT.sol              # 主合约
+│   └── EthereumOfMemoryNFT.sol              # 主合约
 ├── test/
-│   └── EthPandaNFT.t.sol            # 测试文件
+│   └── EthereumOfMemoryNFT.t.sol            # 测试文件
 ├── script/
 │   ├── Deploy.s.sol                 # 部署和管理脚本
 │   └── GenerateMerkleRoot.s.sol    # Merkle Root 生成工具
