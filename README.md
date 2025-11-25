@@ -18,6 +18,7 @@ Memory of Ethereum is an innovative NFT project that releases a unique NFT serie
 ## 🚀 Key Features
 
 ### Core Functionality
+
 - ✅ **Multi-Token Support**: Create new Token ID for each Ethereum upgrade
 - ✅ **Data Isolation**: Each token has independent configuration, whitelist, and user records
 - ✅ **Flexible Pricing**: Support free/paid minting with different prices for whitelist and public phases
@@ -25,12 +26,14 @@ Memory of Ethereum is an innovative NFT project that releases a unique NFT serie
 - ✅ **Fund Management**: Admins can withdraw contract revenue
 
 ### Minting Mechanism
+
 - 🎫 **Whitelist Phase**: Merkle Tree verification with gas optimization
 - 🌍 **Public Phase**: Open to everyone
 - 🎛️ **Manual Control**: Admins can start/end phases at any time
 - 🔒 **Permanent End**: Can permanently disable minting for a token
 
 ### Permission Management
+
 - 👥 **Multi-Admin**: Based on OpenZeppelin AccessControl
 - 🔐 **Role Separation**: Two-level permissions (DEFAULT_ADMIN_ROLE and ADMIN_ROLE)
 - ⚡ **Flexible Operations**: Support dynamic admin add/remove
@@ -47,9 +50,9 @@ Memory of Ethereum is an innovative NFT project that releases a unique NFT serie
 ## 🏗️ Project Structure
 
 ```
-ethpanda-nft/
+memory-of-ethereum-nft/
 ├── src/
-│   └── EthereumOfMemoryNFT.sol         # Main contract (521 lines)
+│   └── EthereumOfMemoryNFT.sol         # Main contract (483 lines)
 ├── test/
 │   └── EthereumOfMemoryNFT.t.sol       # Test suite (54 tests)
 ├── script/
@@ -79,7 +82,7 @@ ethpanda-nft/
 ```bash
 # Clone repository
 git clone <repository-url>
-cd ethpanda-nft
+cd memory-of-ethereum-nft
 
 # Initialize git submodules
 git submodule update --init --recursive
@@ -303,12 +306,13 @@ function whitelistMint(
 ```
 
 Usage example:
+
 ```javascript
 // Free mint
 await nft.whitelistMint(1, 3, proof);
 
 // Paid mint (0.01 ETH per NFT)
-await nft.whitelistMint(1, 3, proof, { value: ethers.parseEther("0.03") });
+await nft.whitelistMint(1, 3, proof, { value: ethers.parseEther('0.03') });
 ```
 
 #### Public Mint
@@ -318,12 +322,13 @@ function publicMint(uint256 tokenId, uint256 amount) external payable;
 ```
 
 Usage example:
+
 ```javascript
 // Free mint
 await nft.publicMint(1, 1);
 
 // Paid mint
-await nft.publicMint(1, 1, { value: ethers.parseEther("0.02") });
+await nft.publicMint(1, 1, { value: ethers.parseEther('0.02') });
 ```
 
 ### Admin Functions
@@ -408,23 +413,24 @@ nft.startWhitelistPhase(2, 0);
 
 Each token has completely independent data:
 
-| Data Item | Description |
-|-----------|-------------|
-| maxSupply | Maximum supply |
+| Data Item              | Description                 |
+| ---------------------- | --------------------------- |
+| maxSupply              | Maximum supply              |
 | whitelistMaxPerAddress | Whitelist per-address limit |
-| publicMaxPerAddress | Public per-address limit |
-| whitelistPrice | Whitelist price |
-| publicPrice | Public price |
-| merkleRoot | Whitelist Merkle Root |
-| phase | Current phase status |
-| whitelistMinted | User whitelist mint records |
-| publicMinted | User public mint records |
+| publicMaxPerAddress    | Public per-address limit    |
+| whitelistPrice         | Whitelist price             |
+| publicPrice            | Public price                |
+| merkleRoot             | Whitelist Merkle Root       |
+| phase                  | Current phase status        |
+| whitelistMinted        | User whitelist mint records |
+| publicMinted           | User public mint records    |
 
 ## 🔐 Permission System
 
 ### Role Definitions
 
 - **DEFAULT_ADMIN_ROLE** (Highest Permission)
+
   - Add/remove ADMIN_ROLE
   - Has all ADMIN_ROLE permissions
 
@@ -452,19 +458,19 @@ forge script script/Deploy.s.sol:RemoveAdminScript --rpc-url sepolia --broadcast
 
 The project provides comprehensive management scripts:
 
-| Script | Function |
-|--------|----------|
-| `DeployScript` | Deploy main contract |
-| `CreateTokenScript` | Create new token |
-| `SetupWhitelistScript` | Setup whitelist |
-| `StartWhitelistPhaseScript` | Start whitelist phase |
-| `StartPublicPhaseScript` | Start public phase |
-| `EndMintPermanentlyScript` | End minting permanently |
-| `AdminMintScript` | Admin mint |
-| `WithdrawScript` | Withdraw funds |
-| `QueryTokenInfoScript` | Query token info |
-| `AddAdminScript` | Add admin |
-| `RemoveAdminScript` | Remove admin |
+| Script                      | Function                |
+| --------------------------- | ----------------------- |
+| `DeployScript`              | Deploy main contract    |
+| `CreateTokenScript`         | Create new token        |
+| `SetupWhitelistScript`      | Setup whitelist         |
+| `StartWhitelistPhaseScript` | Start whitelist phase   |
+| `StartPublicPhaseScript`    | Start public phase      |
+| `EndMintPermanentlyScript`  | End minting permanently |
+| `AdminMintScript`           | Admin mint              |
+| `WithdrawScript`            | Withdraw funds          |
+| `QueryTokenInfoScript`      | Query token info        |
+| `AddAdminScript`            | Add admin               |
+| `RemoveAdminScript`         | Remove admin            |
 
 ## 🎨 Metadata
 
@@ -524,6 +530,7 @@ mainnet = { key = "${ETHERSCAN_API_KEY}" }
 ### Automatic Verification
 
 Verify automatically during deployment:
+
 ```bash
 npm run deploy:sepolia
 ```
@@ -531,6 +538,7 @@ npm run deploy:sepolia
 ### Manual Verification
 
 If automatic verification fails:
+
 ```bash
 export CONTRACT_ADDRESS=0x...
 export BASE_URI=ipfs://YOUR_CID/
@@ -562,6 +570,7 @@ See [VERIFY.md](./VERIFY.md) for details.
 ### Audit Recommendations
 
 Before mainnet deployment:
+
 - 🔒 Conduct professional security audit
 - 🔒 Thoroughly test on testnet
 - 🔒 Use multi-sig wallet for DEFAULT_ADMIN_ROLE
