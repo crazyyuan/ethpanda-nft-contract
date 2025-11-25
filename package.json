@@ -5,6 +5,7 @@
   "scripts": {
     "generate-merkle": "node scripts/generateMerkleTree.js",
     "test": "forge test",
+    "coverage": "forge coverage --ir-minimum --skip script",
     "build": "forge build",
     "deploy:local": "forge script script/Deploy.s.sol:DeployScript --rpc-url http://localhost:8545 --broadcast",
     "deploy:sepolia": "source .env && forge script script/Deploy.s.sol:DeployScript --rpc-url sepolia --broadcast --verify -vvvv",
@@ -26,4 +27,3 @@
     "keccak256": "^1.0.6"
   }
 }
-
