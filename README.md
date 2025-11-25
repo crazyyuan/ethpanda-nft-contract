@@ -30,7 +30,7 @@ Memory of Ethereum is an innovative NFT project that releases a unique NFT serie
 
 - 🎫 **Whitelist Phase**: Merkle Tree verification with gas optimization
 - 🌍 **Public Phase**: Open to everyone
-- 🎛️ **Manual Control**: Admins can start/end phases at any time
+- 🕒 **Time-Gated**: Phases open by configured timestamps (can also skip whitelist entirely)
 - 🔒 **Permanent End**: Can permanently disable minting for a token
 
 ### Permission Management

@@ -33,16 +33,6 @@ contract MemoryOfEthereumNFTTest is Test {
         uint256 maxSupply
     );
     event TokenConfigUpdated(uint256 indexed tokenId);
-    event WhitelistPhaseStarted(
-        uint256 indexed tokenId,
-        uint256 startTime,
-        uint256 price
-    );
-    event PublicPhaseStarted(
-        uint256 indexed tokenId,
-        uint256 startTime,
-        uint256 price
-    );
     event MintPermanentlyEnded(
         uint256 indexed tokenId,
         uint256 remainingSupply
@@ -63,6 +53,87 @@ contract MemoryOfEthereumNFTTest is Test {
     event AdminRemoved(address indexed account);
     event FundsWithdrawn(address indexed to, uint256 amount);
 
+    function _setConfig(
+        uint256 tokenId,
+        uint256 whitelistPrice,
+        uint256 publicPrice,
+        uint256 whitelistStartTime,
+        uint256 publicStartTime
+    ) internal {
+        (
+            ,
+            uint256 maxSupply,
+            ,
+            uint256 whitelistMaxPerAddress,
+            uint256 publicMaxPerAddress,
+            uint256 curWhitelistPrice,
+            uint256 curPublicPrice,
+            ,
+            ,
+
+        ) = nft.getTokenInfo(tokenId);
+        (uint256 curWhitelistStart, uint256 curPublicStart) = nft.getPhaseTimes(
+            tokenId
+        );
+
+        uint256 wlPrice = whitelistPrice == type(uint256).max
+            ? curWhitelistPrice
+            : whitelistPrice;
+        uint256 pubPrice = publicPrice == type(uint256).max
+            ? curPublicPrice
+            : publicPrice;
+        uint256 wlStart = whitelistStartTime == type(uint256).max
+            ? curWhitelistStart
+            : whitelistStartTime;
+        uint256 pubStart = publicStartTime == type(uint256).max
+            ? curPublicStart
+            : publicStartTime;
+
+        nft.updateTokenConfig(
+            tokenId,
+            maxSupply,
+            whitelistMaxPerAddress,
+            publicMaxPerAddress,
+            wlPrice,
+            pubPrice,
+            wlStart,
+            pubStart
+        );
+    }
+
+    function _startWhitelist(uint256 tokenId, uint256 price) internal {
+        _startWhitelist(tokenId, price, 1 hours);
+    }
+
+    function _startWhitelist(
+        uint256 tokenId,
+        uint256 price,
+        uint256 delayToPublic
+    ) internal {
+        uint256 start = block.timestamp;
+        uint256 publicStart = delayToPublic == 0 ? start : start + delayToPublic;
+        _setConfig(
+            tokenId,
+            price,
+            type(uint256).max,
+            start,
+            publicStart
+        );
+        vm.warp(start);
+    }
+
+    function _startPublic(uint256 tokenId, uint256 price) internal {
+        uint256 start = block.timestamp;
+        _setConfig(
+            tokenId,
+            type(uint256).max,
+            price,
+            start > 0 ? start - 1 : 0,
+            start
+        );
+        vm.warp(start);
+    }
+
     function setUp() public {
         admin = address(this);
         admin2 = makeAddr("admin2");
@@ -77,9 +148,10 @@ contract MemoryOfEthereumNFTTest is Test {
         vm.deal(user2, 10 ether);
         vm.deal(user3, 10 ether);
 
-        // 创建两个 Token（默认价格为 0）
-        tokenId1 = nft.createToken("Shapella", 10000, 5, 1, 0, 0, true);
-        tokenId2 = nft.createToken("Dencun", 8000, 3, 2, 0, 0, true);
+        uint256 nowTs = block.timestamp;
+        // 创建两个 Token（默认价格为 0），设置默认时间：白名单 now+1 天，公开 now+2 天
+        tokenId1 = nft.createToken("Shapella", 10000, 5, 1, 0, 0, nowTs + 1 days, nowTs + 2 days, true);
+        tokenId2 = nft.createToken("Dencun", 8000, 3, 2, 0, 0, nowTs + 1 days, nowTs + 2 days, true);
 
         // 设置 Merkle Tree (user1 和 user2 在白名单中)
         bytes32 leaf1 = keccak256(abi.encodePacked(user1));
@@ -119,7 +191,7 @@ contract MemoryOfEthereumNFTTest is Test {
         vm.expectEmit(true, false, false, true);
         emit TokenCreated(3, "Fusaka", 5000);
 
-        uint256 newTokenId = nft.createToken("Fusaka", 5000, 2, 1, 0, 0, true);
+        uint256 newTokenId = nft.createToken("Fusaka", 5000, 2, 1, 0, 0, block.timestamp, block.timestamp + 1 days, true);
 
         assertEq(newTokenId, 3);
         assertEq(nft.currentTokenId(), 3);
@@ -155,6 +227,8 @@ contract MemoryOfEthereumNFTTest is Test {
             1,
             0.01 ether,
             0.02 ether,
+            block.timestamp,
+            block.timestamp + 1 days,
             true
         );
 
@@ -166,7 +240,7 @@ contract MemoryOfEthereumNFTTest is Test {
     }
 
     function testEnforceSBT() public {
-        uint256 badgeId = nft.createToken("Badge", 100, 1, 1, 0, 0, false);
+        uint256 badgeId = nft.createToken("Badge", 100, 1, 1, 0, 0, block.timestamp, block.timestamp + 1 days, false);
         nft.adminMint(badgeId, user1, 1);
 
         vm.prank(user1);
@@ -176,7 +250,7 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testCreateTokenDefaultPriceZero() public {
         // 明确测试默认价格为 0
-        uint256 newTokenId = nft.createToken("Fusaka", 5000, 2, 1, 0, 0, true);
+        uint256 newTokenId = nft.createToken("Fusaka", 5000, 2, 1, 0, 0, block.timestamp, block.timestamp + 1 days, true);
 
         (, , , , , uint256 whitelistPrice, uint256 publicPrice, , , ) = nft
             .getTokenInfo(newTokenId);
@@ -219,13 +293,17 @@ contract MemoryOfEthereumNFTTest is Test {
         vm.expectEmit(true, false, false, false);
         emit TokenConfigUpdated(tokenId1);
 
+        (uint256 wlStart, uint256 pubStart) = nft.getPhaseTimes(tokenId1);
+
         nft.updateTokenConfig(
             tokenId1,
             12000, // 新的 maxSupply
             10, // 新的 whitelistMax
             3, // 新的 publicMax
             0.01 ether, // whitelistPrice
-            0.02 ether // publicPrice
+            0.02 ether, // publicPrice
+            wlStart,
+            pubStart
         );
 
         (
@@ -251,7 +329,7 @@ contract MemoryOfEthereumNFTTest is Test {
     function testUpdateTokenConfigOnlyAdmin() public {
         vm.prank(user1);
         vm.expectRevert();
-        nft.updateTokenConfig(tokenId1, 12000, 10, 3, 0.01 ether, 0.02 ether);
+        nft.updateTokenConfig(tokenId1, 12000, 10, 3, 0.01 ether, 0.02 ether, type(uint256).max, type(uint256).max);
     }
 
     function testUpdateTokenConfigCannotReduceSupplyBelowCurrent() public {
@@ -260,21 +338,21 @@ contract MemoryOfEthereumNFTTest is Test {
 
         // 尝试将 maxSupply 设置为低于当前供应量
         vm.expectRevert("Max supply less than current supply");
-        nft.updateTokenConfig(tokenId1, 4000, 5, 1, 0, 0);
+        nft.updateTokenConfig(tokenId1, 4000, 5, 1, 0, 0, type(uint256).max, type(uint256).max);
     }
 
     function testUpdateTokenConfigAfterMintEnded() public {
-        nft.startWhitelistPhase(tokenId1, 0);
-        nft.startPublicPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
+        _startPublic(tokenId1, 0);
         nft.endMintPermanently(tokenId1);
 
         vm.expectRevert("Token mint has ended");
-        nft.updateTokenConfig(tokenId1, 12000, 10, 3, 0, 0);
+        nft.updateTokenConfig(tokenId1, 12000, 10, 3, 0, 0, type(uint256).max, type(uint256).max);
     }
 
     function testUpdateTokenConfigInvalidTokenId() public {
         vm.expectRevert("Invalid token ID");
-        nft.updateTokenConfig(999, 10000, 5, 1, 0, 0);
+        nft.updateTokenConfig(999, 10000, 5, 1, 0, 0, 0, 0);
     }
 
     // ========== 管理员功能测试 ==========
@@ -304,10 +382,7 @@ contract MemoryOfEthereumNFTTest is Test {
     // ========== Phase 管理测试 ==========
 
     function testStartWhitelistPhase() public {
-        vm.expectEmit(true, false, false, true);
-        emit WhitelistPhaseStarted(tokenId1, block.timestamp, 0);
-
-        nft.startWhitelistPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
 
         assertEq(
             uint256(nft.getCurrentPhase(tokenId1)),
@@ -317,19 +392,16 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testStartWhitelistPhaseWithPrice() public {
         uint256 price = 0.01 ether;
-        nft.startWhitelistPhase(tokenId1, price);
+        _startWhitelist(tokenId1, price);
 
         (, , , , , uint256 whitelistPrice, , , , ) = nft.getTokenInfo(tokenId1);
         assertEq(whitelistPrice, price);
     }
 
     function testStartPublicPhase() public {
-        nft.startWhitelistPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
 
-        vm.expectEmit(true, false, false, true);
-        emit PublicPhaseStarted(tokenId1, block.timestamp, 0);
-
-        nft.startPublicPhase(tokenId1, 0);
+        _startPublic(tokenId1, 0);
 
         assertEq(
             uint256(nft.getCurrentPhase(tokenId1)),
@@ -338,10 +410,10 @@ contract MemoryOfEthereumNFTTest is Test {
     }
 
     function testStartPublicPhaseWithPrice() public {
-        nft.startWhitelistPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
 
         uint256 price = 0.02 ether;
-        nft.startPublicPhase(tokenId1, price);
+        _startPublic(tokenId1, price);
 
         (, , , , , , uint256 publicPrice, , , ) = nft.getTokenInfo(tokenId1);
         assertEq(publicPrice, price);
@@ -359,7 +431,7 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testMintWithZeroPrice() public {
         // 价格为 0 时，不需要发送 ETH
-        nft.startWhitelistPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
 
         vm.prank(user1);
         nft.whitelistMint(tokenId1, 1, merkleProof1);
@@ -370,7 +442,7 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testMintWithZeroPriceCanSendETH() public {
         // 即使价格为 0，也可以发送 ETH（会被退回）
-        nft.startWhitelistPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
 
         uint256 balanceBefore = user1.balance;
 
@@ -386,7 +458,8 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testCanSetPriceViaUpdateConfig() public {
         // 通过 updateTokenConfig 设置价格
-        nft.updateTokenConfig(tokenId1, 10000, 5, 1, 0.01 ether, 0.02 ether);
+        (uint256 wlStart, uint256 pubStart) = nft.getPhaseTimes(tokenId1);
+        nft.updateTokenConfig(tokenId1, 10000, 5, 1, 0.01 ether, 0.02 ether, wlStart, pubStart);
 
         (, , , , , uint256 whitelistPrice, uint256 publicPrice, , , ) = nft
             .getTokenInfo(tokenId1);
@@ -394,7 +467,7 @@ contract MemoryOfEthereumNFTTest is Test {
         assertEq(publicPrice, 0.02 ether);
 
         // 然后启动阶段
-        nft.startWhitelistPhase(tokenId1, 0.015 ether); // 可以在启动时覆盖价格
+        _startWhitelist(tokenId1, 0.015 ether); // 可以在启动时覆盖价格
 
         (, , , , , uint256 updatedWhitelistPrice, , , , ) = nft.getTokenInfo(
             tokenId1
@@ -404,8 +477,9 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testPriceCanBeChangedBeforePhaseStarts() public {
         // 在阶段开始前可以多次更新价格
-        nft.updateTokenConfig(tokenId1, 10000, 5, 1, 0.01 ether, 0.02 ether);
-        nft.updateTokenConfig(tokenId1, 10000, 5, 1, 0.02 ether, 0.03 ether);
+        (uint256 wlStart, uint256 pubStart) = nft.getPhaseTimes(tokenId1);
+        nft.updateTokenConfig(tokenId1, 10000, 5, 1, 0.01 ether, 0.02 ether, wlStart, pubStart);
+        nft.updateTokenConfig(tokenId1, 10000, 5, 1, 0.02 ether, 0.03 ether, wlStart, pubStart);
 
         (, , , , , uint256 whitelistPrice, uint256 publicPrice, , , ) = nft
             .getTokenInfo(tokenId1);
@@ -416,7 +490,7 @@ contract MemoryOfEthereumNFTTest is Test {
     // ========== Whitelist Mint 测试 ==========
 
     function testWhitelistMintFree() public {
-        nft.startWhitelistPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
 
         uint256 amount = 3;
 
@@ -432,7 +506,7 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testWhitelistMintWithPrice() public {
         uint256 price = 0.01 ether;
-        nft.startWhitelistPhase(tokenId1, price);
+        _startWhitelist(tokenId1, price);
 
         uint256 amount = 2;
         uint256 totalPrice = price * amount;
@@ -446,7 +520,7 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testWhitelistMintRefundsExcess() public {
         uint256 price = 0.01 ether;
-        nft.startWhitelistPhase(tokenId1, price);
+        _startWhitelist(tokenId1, price);
 
         uint256 amount = 1;
         uint256 totalPrice = price * amount;
@@ -464,7 +538,7 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testWhitelistMintInsufficientPayment() public {
         uint256 price = 0.01 ether;
-        nft.startWhitelistPhase(tokenId1, price);
+        _startWhitelist(tokenId1, price);
 
         vm.prank(user1);
         vm.expectRevert("Insufficient payment");
@@ -472,7 +546,7 @@ contract MemoryOfEthereumNFTTest is Test {
     }
 
     function testWhitelistMintExceedsAllocation() public {
-        nft.startWhitelistPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
 
         vm.startPrank(user1);
         nft.whitelistMint(tokenId1, 3, merkleProof1);
@@ -483,7 +557,7 @@ contract MemoryOfEthereumNFTTest is Test {
     }
 
     function testWhitelistMintInvalidProof() public {
-        nft.startWhitelistPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
 
         vm.prank(user3);
         vm.expectRevert("Invalid merkle proof");
@@ -493,8 +567,8 @@ contract MemoryOfEthereumNFTTest is Test {
     // ========== Public Mint 测试 ==========
 
     function testPublicMintFree() public {
-        nft.startWhitelistPhase(tokenId1, 0);
-        nft.startPublicPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
+        _startPublic(tokenId1, 0);
 
         vm.prank(user3);
         vm.expectEmit(true, true, false, true);
@@ -507,10 +581,10 @@ contract MemoryOfEthereumNFTTest is Test {
     }
 
     function testPublicMintWithPrice() public {
-        nft.startWhitelistPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
 
         uint256 price = 0.02 ether;
-        nft.startPublicPhase(tokenId1, price);
+        _startPublic(tokenId1, price);
 
         uint256 amount = 1;
         uint256 totalPrice = price * amount;
@@ -523,8 +597,8 @@ contract MemoryOfEthereumNFTTest is Test {
     }
 
     function testPublicMintExceedsAllocation() public {
-        nft.startWhitelistPhase(tokenId1, 0);
-        nft.startPublicPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
+        _startPublic(tokenId1, 0);
 
         vm.startPrank(user3);
         nft.publicMint(tokenId1, 1);
@@ -535,10 +609,10 @@ contract MemoryOfEthereumNFTTest is Test {
     }
 
     function testPublicMintInsufficientPayment() public {
-        nft.startWhitelistPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
 
         uint256 price = 0.02 ether;
-        nft.startPublicPhase(tokenId1, price);
+        _startPublic(tokenId1, price);
 
         vm.prank(user3);
         vm.expectRevert("Insufficient payment");
@@ -546,10 +620,10 @@ contract MemoryOfEthereumNFTTest is Test {
     }
 
     function testPublicMintRefundsExcess() public {
-        nft.startWhitelistPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
 
         uint256 price = 0.02 ether;
-        nft.startPublicPhase(tokenId1, price);
+        _startPublic(tokenId1, price);
 
         uint256 balanceBefore = user3.balance;
 
@@ -584,10 +658,10 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testTokenIsolation() public {
         // 为 token1 启动白名单
-        nft.startWhitelistPhase(tokenId1, 0.01 ether);
+        _startWhitelist(tokenId1, 0.01 ether);
 
         // 为 token2 启动白名单，价格不同
-        nft.startWhitelistPhase(tokenId2, 0.02 ether);
+        _startWhitelist(tokenId2, 0.02 ether);
 
         // token1 的 mint 不影响 token2
         vm.prank(user1);
@@ -625,8 +699,8 @@ contract MemoryOfEthereumNFTTest is Test {
         // token1: whitelist 5, public 1
         // token2: whitelist 3, public 2
 
-        nft.startWhitelistPhase(tokenId1, 0);
-        nft.startWhitelistPhase(tokenId2, 0);
+        _startWhitelist(tokenId1, 0);
+        _startWhitelist(tokenId2, 0);
 
         // token1 可以 mint 5
         vm.prank(user1);
@@ -648,8 +722,8 @@ contract MemoryOfEthereumNFTTest is Test {
     function testDifferentPricesForDifferentTokens() public {
         // token1: 免费
         // token2: 付费
-        nft.startWhitelistPhase(tokenId1, 0);
-        nft.startWhitelistPhase(tokenId2, 0.01 ether);
+        _startWhitelist(tokenId1, 0);
+        _startWhitelist(tokenId2, 0.01 ether);
 
         // token1 免费 mint
         vm.prank(user1);
@@ -664,8 +738,8 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testDifferentPricesForWhitelistAndPublic() public {
         // 白名单便宜，公开贵
-        nft.startWhitelistPhase(tokenId1, 0.01 ether);
-        nft.startPublicPhase(tokenId1, 0.05 ether);
+        _startWhitelist(tokenId1, 0.01 ether);
+        _startPublic(tokenId1, 0.05 ether);
 
         // 检查价格设置
         (, , , , , uint256 whitelistPrice, uint256 publicPrice, , , ) = nft
@@ -681,7 +755,7 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testWhitelistFreePublicPaid() public {
         // 白名单免费，公开付费
-        nft.startWhitelistPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
 
         // 白名单免费 mint（在公开阶段开始前）
         vm.prank(user1);
@@ -689,7 +763,7 @@ contract MemoryOfEthereumNFTTest is Test {
         assertEq(address(nft).balance, 0);
 
         // 开始公开阶段
-        nft.startPublicPhase(tokenId1, 0.02 ether);
+        _startPublic(tokenId1, 0.02 ether);
 
         // 公开付费 mint
         vm.prank(user3);
@@ -699,8 +773,8 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testWhitelistPaidPublicFree() public {
         // 白名单付费，公开免费（不常见但应该支持）
-        nft.startWhitelistPhase(tokenId1, 0.01 ether);
-        nft.startPublicPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0.01 ether);
+        _startPublic(tokenId1, 0);
 
         // 公开免费 mint
         vm.prank(user3);
@@ -710,7 +784,7 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testMultipleMintsDifferentPrices() public {
         // 多次 mint，累计金额
-        nft.startWhitelistPhase(tokenId1, 0.01 ether);
+        _startWhitelist(tokenId1, 0.01 ether);
 
         vm.startPrank(user1);
         nft.whitelistMint{value: 0.01 ether}(tokenId1, 1, merkleProof1);
@@ -724,7 +798,7 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testExactPayment() public {
         // 测试精确支付（不多不少）
-        nft.startWhitelistPhase(tokenId1, 0.01 ether);
+        _startWhitelist(tokenId1, 0.01 ether);
 
         uint256 balanceBefore = user1.balance;
 
@@ -740,7 +814,7 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testWithdraw() public {
         // 先收集一些 ETH
-        nft.startWhitelistPhase(tokenId1, 0.01 ether);
+        _startWhitelist(tokenId1, 0.01 ether);
 
         vm.prank(user1);
         nft.whitelistMint{value: 0.05 ether}(tokenId1, 5, merkleProof1);
@@ -759,15 +833,15 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testWithdrawMultipleSources() public {
         // 从多个 token 和阶段收集资金
-        nft.startWhitelistPhase(tokenId1, 0.01 ether);
-        nft.startWhitelistPhase(tokenId2, 0.015 ether);
+        _startWhitelist(tokenId1, 0.01 ether);
+        _startWhitelist(tokenId2, 0.015 ether);
 
         // token1 白名单
         vm.prank(user1);
         nft.whitelistMint{value: 0.05 ether}(tokenId1, 5, merkleProof1);
 
         // 开始 token1 公开阶段
-        nft.startPublicPhase(tokenId1, 0.02 ether);
+        _startPublic(tokenId1, 0.02 ether);
 
         // token1 公开
         vm.prank(user3);
@@ -786,7 +860,7 @@ contract MemoryOfEthereumNFTTest is Test {
     }
 
     function testWithdrawOnlyAdmin() public {
-        nft.startWhitelistPhase(tokenId1, 0.01 ether);
+        _startWhitelist(tokenId1, 0.01 ether);
 
         vm.prank(user1);
         nft.whitelistMint{value: 0.01 ether}(tokenId1, 1, merkleProof1);
@@ -804,8 +878,8 @@ contract MemoryOfEthereumNFTTest is Test {
     // ========== End Mint 测试 ==========
 
     function testEndMintPermanently() public {
-        nft.startWhitelistPhase(tokenId1, 0);
-        nft.startPublicPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
+        _startPublic(tokenId1, 0);
 
         nft.adminMint(tokenId1, user1, 100);
         uint256 remaining = nft.remainingSupply(tokenId1);
@@ -831,8 +905,8 @@ contract MemoryOfEthereumNFTTest is Test {
     }
 
     function testCannotMintAfterEnded() public {
-        nft.startWhitelistPhase(tokenId1, 0);
-        nft.startPublicPhase(tokenId1, 0);
+        _startWhitelist(tokenId1, 0);
+        _startPublic(tokenId1, 0);
         nft.endMintPermanently(tokenId1);
 
         vm.prank(user1);
@@ -845,6 +919,48 @@ contract MemoryOfEthereumNFTTest is Test {
 
         vm.expectRevert("Mint has permanently ended");
         nft.adminMint(tokenId1, user1, 1);
+    }
+
+    function testSkipWhitelistMode() public {
+        uint256 nowTs = block.timestamp;
+        uint256 publicStart = nowTs + 100;
+
+        // configure public-only token
+        _setConfig(
+            tokenId1,
+            type(uint256).max,
+            type(uint256).max,
+            0,
+            publicStart
+        );
+
+        // before public start: NotStarted, whitelist mint blocked, public mint blocked
+        assertEq(
+            uint256(nft.getCurrentPhase(tokenId1)),
+            uint256(MemoryOfEthereumNFT.MintPhase.NotStarted)
+        );
+        vm.prank(user1);
+        vm.expectRevert("Not in whitelist phase");
+        nft.whitelistMint(tokenId1, 1, merkleProof1);
+
+        vm.prank(user3);
+        vm.expectRevert("Not in public phase");
+        nft.publicMint{value: 0}(tokenId1, 1);
+
+        // after public start: phase is Public, whitelist still blocked
+        vm.warp(publicStart + 1);
+        assertEq(
+            uint256(nft.getCurrentPhase(tokenId1)),
+            uint256(MemoryOfEthereumNFT.MintPhase.Public)
+        );
+        vm.prank(user1);
+        vm.expectRevert("Not in whitelist phase");
+        nft.whitelistMint(tokenId1, 1, merkleProof1);
+
+        // public mint works
+        vm.prank(user3);
+        nft.publicMint{value: 0}(tokenId1, 1);
+        assertEq(nft.balanceOf(user3, tokenId1), 1);
     }
 
     // ========== URI 测试 ==========
@@ -888,6 +1004,7 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testCompleteFlow() public {
         // 创建新 token（带价格）
+        uint256 nowTs = block.timestamp;
         uint256 newTokenId = nft.createToken(
             "Fusaka",
             5000,
@@ -895,18 +1012,20 @@ contract MemoryOfEthereumNFTTest is Test {
             1,
             0.01 ether,
             0.02 ether,
+            nowTs,
+            nowTs + 1 days,
             true
         );
         nft.setMerkleRoot(newTokenId, merkleRoot);
 
-        // 白名单阶段（使用创建时设置的价格，或者覆盖）
-        nft.startWhitelistPhase(newTokenId, 0.01 ether);
+        // 白名单阶段（使用创建时设置的价格）
+        vm.warp(nowTs);
 
         vm.prank(user1);
         nft.whitelistMint{value: 0.02 ether}(newTokenId, 2, merkleProof1);
 
         // 公开阶段
-        nft.startPublicPhase(newTokenId, 0.02 ether);
+        vm.warp(nowTs + 1 days + 1);
 
         vm.prank(user3);
         nft.publicMint{value: 0.02 ether}(newTokenId, 1);

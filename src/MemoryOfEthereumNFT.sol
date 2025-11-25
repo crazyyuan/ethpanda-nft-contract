@@ -55,9 +55,8 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
     event TokenCreated(uint256 indexed tokenId, string upgradeName, uint256 maxSupply);
     event TokenConfigUpdated(uint256 indexed tokenId);
     event MerkleRootUpdated(uint256 indexed tokenId, bytes32 newMerkleRoot);
-    event WhitelistPhaseStarted(uint256 indexed tokenId, uint256 startTime, uint256 price);
-    event PublicPhaseStarted(uint256 indexed tokenId, uint256 startTime, uint256 price);
     event MintPermanentlyEnded(uint256 indexed tokenId, uint256 remainingSupply);
+    event PhaseTimesUpdated(uint256 indexed tokenId, uint256 whitelistStartTime, uint256 publicStartTime);
     event BaseURIUpdated(string newBaseURI);
     event WhitelistMint(uint256 indexed tokenId, address indexed minter, uint256 amount, uint256 totalPaid);
     event PublicMint(uint256 indexed tokenId, address indexed minter, uint256 amount, uint256 totalPaid);
@@ -95,6 +94,8 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
      * @param publicMaxPerAddress per-address limit in public phase
      * @param whitelistPrice price per token in whitelist phase
      * @param publicPrice price per token in public phase
+     * @param whitelistStartTime timestamp when whitelist opens (0 to skip whitelist)
+     * @param publicStartTime timestamp when public opens (must be > whitelistStartTime if whitelist set, or > 0 if skipping whitelist)
      * @param transferable whether the token can be transferred (false -> SBT-like)
      */
     function createToken(
@@ -104,11 +105,14 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         uint256 publicMaxPerAddress,
         uint256 whitelistPrice,
         uint256 publicPrice,
+        uint256 whitelistStartTime,
+        uint256 publicStartTime,
         bool transferable
     ) external onlyRole(ADMIN_ROLE) returns (uint256) {
         require(maxSupply > 0, "Max supply must be greater than 0");
         require(whitelistMaxPerAddress > 0, "Whitelist max must be greater than 0");
         require(publicMaxPerAddress > 0, "Public max must be greater than 0");
+        _validatePhaseTimes(whitelistStartTime, publicStartTime);
 
         currentTokenId++;
         uint256 newTokenId = currentTokenId;
@@ -120,8 +124,8 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
             whitelistPrice: whitelistPrice,
             publicPrice: publicPrice,
             merkleRoot: bytes32(0),
-            whitelistStartTime: 0,
-            publicStartTime: 0,
+            whitelistStartTime: whitelistStartTime,
+            publicStartTime: publicStartTime,
             mintEnded: false,
             transferable: transferable,
             upgradeName: upgradeName
@@ -140,18 +144,23 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         uint256 whitelistMaxPerAddress,
         uint256 publicMaxPerAddress,
         uint256 whitelistPrice,
-        uint256 publicPrice
+        uint256 publicPrice,
+        uint256 whitelistStartTime,
+        uint256 publicStartTime
     ) external onlyRole(ADMIN_ROLE) {
         require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
         TokenConfig storage config = tokenConfigs[tokenId];
         require(!config.mintEnded, "Token mint has ended");
         require(maxSupply >= totalSupply(tokenId), "Max supply less than current supply");
+        _validatePhaseTimes(whitelistStartTime, publicStartTime);
 
         config.maxSupply = maxSupply;
         config.whitelistMaxPerAddress = whitelistMaxPerAddress;
         config.publicMaxPerAddress = publicMaxPerAddress;
         config.whitelistPrice = whitelistPrice;
         config.publicPrice = publicPrice;
+        config.whitelistStartTime = whitelistStartTime;
+        config.publicStartTime = publicStartTime;
 
         emit TokenConfigUpdated(tokenId);
     }
@@ -167,11 +176,22 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
             return MintPhase.Ended;
         }
 
-        if (config.whitelistStartTime == 0) {
+        uint256 wlStart = config.whitelistStartTime;
+        uint256 pubStart = config.publicStartTime;
+
+        if (wlStart == 0 && pubStart == 0) {
             return MintPhase.NotStarted;
         }
 
-        if (config.publicStartTime == 0) {
+        if (wlStart == 0) {
+            return block.timestamp < pubStart ? MintPhase.NotStarted : MintPhase.Public;
+        }
+
+        if (block.timestamp < wlStart) {
+            return MintPhase.NotStarted;
+        }
+
+        if (pubStart == 0 || block.timestamp < pubStart) {
             return MintPhase.Whitelist;
         }
 
@@ -210,32 +230,13 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         emit MerkleRootUpdated(tokenId, _merkleRoot);
     }
 
-    /**
-     * @dev Start whitelist phase
-     */
-    function startWhitelistPhase(uint256 tokenId, uint256 price) external onlyRole(ADMIN_ROLE) {
-        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
-        TokenConfig storage config = tokenConfigs[tokenId];
-        require(config.whitelistStartTime == 0, "Whitelist phase already started");
-        require(config.merkleRoot != bytes32(0), "Merkle root not set");
-
-        config.whitelistStartTime = block.timestamp;
-        config.whitelistPrice = price;
-        emit WhitelistPhaseStarted(tokenId, block.timestamp, price);
-    }
-
-    /**
-     * @dev Start public phase
-     */
-    function startPublicPhase(uint256 tokenId, uint256 price) external onlyRole(ADMIN_ROLE) {
-        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
-        TokenConfig storage config = tokenConfigs[tokenId];
-        require(config.whitelistStartTime > 0, "Whitelist phase not started");
-        require(config.publicStartTime == 0, "Public phase already started");
-
-        config.publicStartTime = block.timestamp;
-        config.publicPrice = price;
-        emit PublicPhaseStarted(tokenId, block.timestamp, price);
+    function _validatePhaseTimes(uint256 whitelistStartTime, uint256 publicStartTime) internal pure {
+        if (whitelistStartTime == 0) {
+            require(publicStartTime > 0, "Public start required when skipping whitelist");
+        }
+        if (whitelistStartTime != 0 && publicStartTime != 0) {
+            require(publicStartTime > whitelistStartTime, "Public must be after whitelist");
+        }
     }
 
     /**
@@ -252,6 +253,11 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         require(!config.mintEnded, "Mint has permanently ended");
         require(getCurrentPhase(tokenId) == MintPhase.Whitelist, "Not in whitelist phase");
         require(amount > 0, "Amount must be greater than 0");
+        require(config.whitelistStartTime > 0, "Whitelist not scheduled");
+        require(block.timestamp >= config.whitelistStartTime, "Whitelist not started");
+        if (config.publicStartTime != 0) {
+            require(block.timestamp < config.publicStartTime, "Whitelist phase ended");
+        }
         require(
             whitelistMinted[tokenId][msg.sender] + amount <= config.whitelistMaxPerAddress,
             "Exceeds whitelist allocation"
@@ -285,6 +291,8 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         require(!config.mintEnded, "Mint has permanently ended");
         require(getCurrentPhase(tokenId) == MintPhase.Public, "Not in public phase");
         require(amount > 0, "Amount must be greater than 0");
+        require(config.publicStartTime > 0, "Public not scheduled");
+        require(block.timestamp >= config.publicStartTime, "Public not started");
         require(
             publicMinted[tokenId][msg.sender] + amount <= config.publicMaxPerAddress,
             "Exceeds public allocation"
@@ -463,6 +471,12 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
             config.mintEnded,
             config.transferable
         );
+    }
+
+    function getPhaseTimes(uint256 tokenId) external view returns (uint256 whitelistStartTime, uint256 publicStartTime) {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        TokenConfig storage config = tokenConfigs[tokenId];
+        return (config.whitelistStartTime, config.publicStartTime);
     }
 
     function _update(
