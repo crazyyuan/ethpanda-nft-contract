@@ -52,6 +52,7 @@ contract MemoryOfEthereumNFTTest is Test {
     event AdminAdded(address indexed account);
     event AdminRemoved(address indexed account);
     event FundsWithdrawn(address indexed to, uint256 amount);
+    event TokenURIUpdated(uint256 indexed tokenId, string newURI);
 
     function _setConfig(
         uint256 tokenId,
@@ -978,6 +979,16 @@ contract MemoryOfEthereumNFTTest is Test {
     function testInvalidTokenId() public {
         vm.expectRevert("Invalid token ID");
         nft.uri(999);
+    }
+
+    function testTokenURIOverride() public {
+        string memory customURI = "https://example.com/custom/1.json";
+
+        vm.expectEmit(true, false, false, true);
+        emit TokenURIUpdated(tokenId1, customURI);
+        nft.setTokenURI(tokenId1, customURI);
+
+        assertEq(nft.uri(tokenId1), customURI);
     }
 
     // ========== 其他测试 ==========

@@ -22,6 +22,7 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
     string public symbol;
 
     string private _baseTokenURI;
+    mapping(uint256 => string) private _tokenURIs;
 
     uint256 public currentTokenId;
 
@@ -58,6 +59,7 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
     event MintPermanentlyEnded(uint256 indexed tokenId, uint256 remainingSupply);
     event PhaseTimesUpdated(uint256 indexed tokenId, uint256 whitelistStartTime, uint256 publicStartTime);
     event BaseURIUpdated(string newBaseURI);
+    event TokenURIUpdated(uint256 indexed tokenId, string newURI);
     event WhitelistMint(uint256 indexed tokenId, address indexed minter, uint256 amount, uint256 totalPaid);
     event PublicMint(uint256 indexed tokenId, address indexed minter, uint256 amount, uint256 totalPaid);
     event AdminMint(uint256 indexed tokenId, address indexed to, uint256 amount);
@@ -367,10 +369,23 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
     }
 
     /**
+     * @dev Set per-token URI override
+     */
+    function setTokenURI(uint256 tokenId, string memory newURI) external onlyRole(ADMIN_ROLE) {
+        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        _tokenURIs[tokenId] = newURI;
+        emit TokenURIUpdated(tokenId, newURI);
+    }
+
+    /**
      * @dev token URI
      */
     function uri(uint256 tokenId) public view override returns (string memory) {
         require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        string memory overrideURI = _tokenURIs[tokenId];
+        if (bytes(overrideURI).length > 0) {
+            return overrideURI;
+        }
         return string(abi.encodePacked(_baseTokenURI, tokenId.toString(), ".json"));
     }
 
