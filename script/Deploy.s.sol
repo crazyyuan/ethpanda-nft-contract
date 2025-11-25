@@ -135,6 +135,7 @@ contract SetPhaseTimesScript is Script {
             uint256 publicPrice,
             ,
             ,
+            ,
             bool transferable
         ) = nft.getTokenInfo(tokenId);
 
@@ -265,6 +266,7 @@ contract QueryTokenInfoScript is Script {
             uint256 publicPrice,
             MemoryOfEthereumNFT.MintPhase phase,
             bool ended,
+            uint256 mintEndTime,
             bool transferable
         ) = nft.getTokenInfo(tokenId);
 
@@ -289,6 +291,7 @@ contract QueryTokenInfoScript is Script {
         console.log("=== Status ===");
         console.log("Current Phase:", uint256(phase));
         console.log("Mint Ended:", ended);
+        console.log("Mint End Time:", mintEndTime);
         console.log("Transferable:", transferable);
     }
 }

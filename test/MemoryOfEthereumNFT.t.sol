@@ -71,6 +71,7 @@ contract MemoryOfEthereumNFTTest is Test {
             uint256 curPublicPrice,
             ,
             ,
+            ,
 
         ) = nft.getTokenInfo(tokenId);
         (uint256 curWhitelistStart, uint256 curPublicStart) = nft.getPhaseTimes(
@@ -207,6 +208,7 @@ contract MemoryOfEthereumNFTTest is Test {
             uint256 publicPrice,
             MemoryOfEthereumNFT.MintPhase phase,
             bool ended,
+            uint256 mintEndTime,
             bool transferable
         ) = nft.getTokenInfo(newTokenId);
 
@@ -217,6 +219,7 @@ contract MemoryOfEthereumNFTTest is Test {
         assertEq(whitelistPrice, 0);
         assertEq(publicPrice, 0);
         assertFalse(ended);
+        assertEq(mintEndTime, 0);
         assertTrue(transferable);
     }
 
@@ -416,7 +419,7 @@ contract MemoryOfEthereumNFTTest is Test {
         uint256 price = 0.02 ether;
         _startPublic(tokenId1, price);
 
-        (, , , , , , uint256 publicPrice, , , ) = nft.getTokenInfo(tokenId1);
+        (, , , , , , uint256 publicPrice, , , , ) = nft.getTokenInfo(tokenId1);
         assertEq(publicPrice, price);
     }
 
@@ -424,7 +427,7 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testDefaultPriceIsZero() public view {
         // 验证新创建的 token 默认价格为 0
-        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , , ) = nft
+        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , , , ) = nft
             .getTokenInfo(tokenId1);
         assertEq(whitelistPrice, 0);
         assertEq(publicPrice, 0);
@@ -895,7 +898,7 @@ contract MemoryOfEthereumNFTTest is Test {
             uint256(MemoryOfEthereumNFT.MintPhase.Ended)
         );
         assertEq(nft.remainingSupply(tokenId1), 0);
-        (, uint256 maxSupplyAfter, , , , , , , , ) = nft.getTokenInfo(tokenId1);
+        (, uint256 maxSupplyAfter, , , , , , uint256 mintEndTime, ) = nft.getTokenInfo(tokenId1);
         assertEq(maxSupplyAfter, nft.totalSupply(tokenId1));
 
         // tokenId2 不受影响

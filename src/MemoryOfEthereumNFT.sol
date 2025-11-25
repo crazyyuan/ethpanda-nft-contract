@@ -43,6 +43,7 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         uint256 whitelistStartTime;
         uint256 publicStartTime;
         bool mintEnded;
+        uint256 mintEndTime;
         bool transferable;
         string upgradeName; // e.g. "Shapella", "Dencun"
     }
@@ -129,6 +130,7 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
             whitelistStartTime: whitelistStartTime,
             publicStartTime: publicStartTime,
             mintEnded: false,
+            mintEndTime: 0,
             transferable: transferable,
             upgradeName: upgradeName
         });
@@ -163,6 +165,7 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         config.publicPrice = publicPrice;
         config.whitelistStartTime = whitelistStartTime;
         config.publicStartTime = publicStartTime;
+        // mintEndTime stays unchanged; endMintPermanently sets it.
 
         emit TokenConfigUpdated(tokenId);
     }
@@ -341,6 +344,7 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         uint256 remaining = config.maxSupply - currentSupply;
 
         config.mintEnded = true;
+        config.mintEndTime = block.timestamp;
         config.maxSupply = currentSupply; // lock maxSupply to minted amount (burn unminted quota)
 
         emit MintPermanentlyEnded(tokenId, remaining);
@@ -469,6 +473,7 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         uint256 publicPrice,
         MintPhase phase,
         bool ended,
+        uint256 mintEndTime,
         bool transferable
     ) {
         require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
@@ -484,6 +489,7 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
             config.publicPrice,
             getCurrentPhase(tokenId),
             config.mintEnded,
+            config.mintEndTime,
             config.transferable
         );
     }
