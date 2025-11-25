@@ -2,10 +2,10 @@
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
-import {EthereumOfMemoryNFT} from "../src/EthereumOfMemoryNFT.sol";
+import {MemoryOfEthereumNFT} from "../src/MemoryOfEthereumNFT.sol";
 
-contract EthereumOfMemoryNFTTest is Test {
-    EthereumOfMemoryNFT public nft;
+contract MemoryOfEthereumNFTTest is Test {
+    MemoryOfEthereumNFT public nft;
 
     address public admin;
     address public admin2;
@@ -70,7 +70,7 @@ contract EthereumOfMemoryNFTTest is Test {
         user2 = makeAddr("user2");
         user3 = makeAddr("user3");
 
-        nft = new EthereumOfMemoryNFT(NAME, SYMBOL, BASE_URI, admin);
+        nft = new MemoryOfEthereumNFT(NAME, SYMBOL, BASE_URI, admin);
 
         // 为测试用户提供 ETH
         vm.deal(user1, 10 ether);
@@ -181,7 +181,7 @@ contract EthereumOfMemoryNFTTest is Test {
             uint256 publicMax,
             uint256 whitelistPrice,
             uint256 publicPrice,
-            EthereumOfMemoryNFT.MintPhase phase,
+            MemoryOfEthereumNFT.MintPhase phase,
             bool ended
         ) = nft.getTokenInfo(tokenId1);
 
@@ -194,7 +194,7 @@ contract EthereumOfMemoryNFTTest is Test {
         assertEq(publicPrice, 0);
         assertEq(
             uint256(phase),
-            uint256(EthereumOfMemoryNFT.MintPhase.NotStarted)
+            uint256(MemoryOfEthereumNFT.MintPhase.NotStarted)
         );
         assertEq(ended, false);
     }
@@ -295,7 +295,7 @@ contract EthereumOfMemoryNFTTest is Test {
 
         assertEq(
             uint256(nft.getCurrentPhase(tokenId1)),
-            uint256(EthereumOfMemoryNFT.MintPhase.Whitelist)
+            uint256(MemoryOfEthereumNFT.MintPhase.Whitelist)
         );
     }
 
@@ -317,7 +317,7 @@ contract EthereumOfMemoryNFTTest is Test {
 
         assertEq(
             uint256(nft.getCurrentPhase(tokenId1)),
-            uint256(EthereumOfMemoryNFT.MintPhase.Public)
+            uint256(MemoryOfEthereumNFT.MintPhase.Public)
         );
     }
 
@@ -801,14 +801,14 @@ contract EthereumOfMemoryNFTTest is Test {
 
         assertEq(
             uint256(nft.getCurrentPhase(tokenId1)),
-            uint256(EthereumOfMemoryNFT.MintPhase.Ended)
+            uint256(MemoryOfEthereumNFT.MintPhase.Ended)
         );
         assertEq(nft.remainingSupply(tokenId1), 0);
 
         // tokenId2 不受影响
         assertEq(
             uint256(nft.getCurrentPhase(tokenId2)),
-            uint256(EthereumOfMemoryNFT.MintPhase.NotStarted)
+            uint256(MemoryOfEthereumNFT.MintPhase.NotStarted)
         );
     }
 

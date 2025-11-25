@@ -52,9 +52,9 @@ Memory of Ethereum 是一个创新的 NFT 项目，每次以太坊重大升级�
 ```
 memory-of-ethereum-nft/
 ├── src/
-│   └── EthereumOfMemoryNFT.sol         # 主合约 (483 行)
+│   └── MemoryOfEthereumNFT.sol         # 主合约 (483 行)
 ├── test/
-│   └── EthereumOfMemoryNFT.t.sol       # 测试文件 (54 个测试)
+│   └── MemoryOfEthereumNFT.t.sol       # 测试文件 (54 个测试)
 ├── script/
 │   ├── Deploy.s.sol                    # 部署和管理脚本 (10+ 脚本)
 │   └── GenerateMerkleRoot.s.sol        # Merkle Root 生成工具
@@ -163,7 +163,7 @@ forge coverage
 npm run deploy:sepolia
 ```
 
-这会部署 `EthereumOfMemoryNFT` 合约并输出合约地址。
+这会部署 `MemoryOfEthereumNFT` 合约并输出合约地址。
 
 ### 2. 创建第一个 Token
 

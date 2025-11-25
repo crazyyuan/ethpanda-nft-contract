@@ -11,7 +11,7 @@ import {Script, console} from "forge-std/Script.sol";
  *forge script script/Verify.s.sol:VerifyScript --rpc-url sepolia --verify -vvvv
  * 
  * 或者使用 forge verify-contract 命令:
- * forge verify-contract <CONTRACT_ADDRESS> EthereumOfMemoryNFT \
+ * forge verify-contract <CONTRACT_ADDRESS> MemoryOfEthereumNFT \
  *   --constructor-args $(cast abi-encode "constructor(string,string,string,address)" "Memory of Ethereum" "Fusaka" "YOUR_BASE_URI" "YOUR_ADMIN_ADDRESS") \
  *   --etherscan-api-key $ETHERSCAN_API_KEY \
  *   --chain sepolia
@@ -27,7 +27,7 @@ contract VerifyScript is Script {
         
         console.log("=== Contract Verification Info ===");
         console.log("Contract Address:", contractAddress);
-        console.log("Contract Name: EthereumOfMemoryNFT");
+        console.log("Contract Name: MemoryOfEthereumNFT");
         console.log("");
         console.log("Constructor Arguments:");
         console.log("  name:", name);
@@ -43,7 +43,7 @@ contract VerifyScript is Script {
         string memory verifyCommand = string(abi.encodePacked(
             "forge verify-contract ",
             vm.toString(contractAddress),
-            " EthereumOfMemoryNFT ",
+            " MemoryOfEthereumNFT ",
             "--constructor-args $(cast abi-encode \"constructor(string,string,string,address)\" \"",
             name,
             "\" \"",

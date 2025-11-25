@@ -2,11 +2,11 @@
 pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
-import {EthereumOfMemoryNFT} from "../src/EthereumOfMemoryNFT.sol";
+import {MemoryOfEthereumNFT} from "../src/MemoryOfEthereumNFT.sol";
 
 /**
  * @title Deploy Script
- * @dev 部署 EthereumOfMemoryNFT 合约的脚本
+ * @dev 部署 MemoryOfEthereumNFT 合约的脚本
  * 
  * 使用方法:
  * forge script script/Deploy.s.sol:DeployScript --rpc-url <RPC_URL> --broadcast --verify
@@ -28,9 +28,9 @@ contract DeployScript is Script {
         vm.startBroadcast(deployerPrivateKey);
         
         // 部署合约
-        EthereumOfMemoryNFT nft = new EthereumOfMemoryNFT(NAME, SYMBOL, BASE_URI, defaultAdmin);
+        MemoryOfEthereumNFT nft = new MemoryOfEthereumNFT(NAME, SYMBOL, BASE_URI, defaultAdmin);
         
-        console.log("=== EthereumOfMemoryNFT Deployed ===");
+        console.log("=== MemoryOfEthereumNFT Deployed ===");
         console.log("Contract Address:", address(nft));
         console.log("Default Admin:", defaultAdmin);
         console.log("Is Admin:", nft.hasRole(ADMIN_ROLE, defaultAdmin));
@@ -62,7 +62,7 @@ contract CreateTokenScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        MemoryOfEthereumNFT nft = MemoryOfEthereumNFT(payable(nftAddress));
         
         uint256 tokenId = nft.createToken(
             upgradeName,
@@ -99,7 +99,7 @@ contract SetupWhitelistScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        MemoryOfEthereumNFT nft = MemoryOfEthereumNFT(payable(nftAddress));
         nft.setMerkleRoot(tokenId, merkleRoot);
         
         console.log("=== Whitelist Setup ===");
@@ -123,7 +123,7 @@ contract StartWhitelistPhaseScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        MemoryOfEthereumNFT nft = MemoryOfEthereumNFT(payable(nftAddress));
         nft.startWhitelistPhase(tokenId, price);
         
         console.log("=== Whitelist Phase Started ===");
@@ -148,7 +148,7 @@ contract StartPublicPhaseScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        MemoryOfEthereumNFT nft = MemoryOfEthereumNFT(payable(nftAddress));
         nft.startPublicPhase(tokenId, price);
         
         console.log("=== Public Phase Started ===");
@@ -172,7 +172,7 @@ contract EndMintPermanentlyScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        MemoryOfEthereumNFT nft = MemoryOfEthereumNFT(payable(nftAddress));
         
         uint256 remainingSupply = nft.remainingSupply(tokenId);
         
@@ -203,7 +203,7 @@ contract AdminMintScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        MemoryOfEthereumNFT nft = MemoryOfEthereumNFT(payable(nftAddress));
         
         console.log("=== Admin Mint ===");
         console.log("Token ID:", tokenId);
@@ -230,7 +230,7 @@ contract WithdrawScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        MemoryOfEthereumNFT nft = MemoryOfEthereumNFT(payable(nftAddress));
         
         uint256 balance = address(nft).balance;
         console.log("=== Withdraw Funds ===");
@@ -254,7 +254,7 @@ contract QueryTokenInfoScript is Script {
         address nftAddress = vm.envAddress("NFT_ADDRESS");
         uint256 tokenId = vm.envUint("TOKEN_ID");
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        MemoryOfEthereumNFT nft = MemoryOfEthereumNFT(payable(nftAddress));
         
         (
             string memory upgradeName,
@@ -264,7 +264,7 @@ contract QueryTokenInfoScript is Script {
             uint256 publicMaxPerAddress,
             uint256 whitelistPrice,
             uint256 publicPrice,
-            EthereumOfMemoryNFT.MintPhase phase,
+            MemoryOfEthereumNFT.MintPhase phase,
             bool ended
         ) = nft.getTokenInfo(tokenId);
         
@@ -304,7 +304,7 @@ contract AddAdminScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        MemoryOfEthereumNFT nft = MemoryOfEthereumNFT(payable(nftAddress));
         
         console.log("=== Adding Admin ===");
         console.log("New Admin:", newAdmin);
@@ -329,7 +329,7 @@ contract RemoveAdminScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        EthereumOfMemoryNFT nft = EthereumOfMemoryNFT(payable(nftAddress));
+        MemoryOfEthereumNFT nft = MemoryOfEthereumNFT(payable(nftAddress));
         
         console.log("=== Removing Admin ===");
         console.log("Admin to Remove:", adminToRemove);

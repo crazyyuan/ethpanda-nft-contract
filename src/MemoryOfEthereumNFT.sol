@@ -9,11 +9,11 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
- * @title EthereumOfMemoryNFT
+ * @title MemoryOfEthereumNFT
  * @dev ERC1155 collection with one tokenId per Ethereum upgrade.
  * @notice Memory of Ethereum NFT: each upgrade is a separate series.
  */
-contract EthereumOfMemoryNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply {
+contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply {
     using Strings for uint256;
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");

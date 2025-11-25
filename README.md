@@ -52,9 +52,9 @@ Memory of Ethereum is an innovative NFT project that releases a unique NFT serie
 ```
 memory-of-ethereum-nft/
 ├── src/
-│   └── EthereumOfMemoryNFT.sol         # Main contract (483 lines)
+│   └── MemoryOfEthereumNFT.sol         # Main contract (483 lines)
 ├── test/
-│   └── EthereumOfMemoryNFT.t.sol       # Test suite (54 tests)
+│   └── MemoryOfEthereumNFT.t.sol       # Test suite (54 tests)
 ├── script/
 │   ├── Deploy.s.sol                    # Deployment scripts (10+)
 │   └── GenerateMerkleRoot.s.sol        # Merkle Root generator
@@ -163,7 +163,7 @@ forge coverage
 npm run deploy:sepolia
 ```
 
-This deploys the `EthereumOfMemoryNFT` contract and outputs the contract address.
+This deploys the `MemoryOfEthereumNFT` contract and outputs the contract address.
 
 ### 2. Create First Token
 
