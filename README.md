@@ -48,28 +48,6 @@ Memory of Ethereum is an innovative NFT project that releases a unique NFT serie
 - **Compilation**: via-ir mode
 - **Whitelist**: Merkle Tree
 
-## 🏗️ Project Structure
-
-```
-memory-of-ethereum-nft/
-├── src/
-│   └── MemoryOfEthereumNFT.sol         # Main contract (495 lines)
-├── test/
-│   └── MemoryOfEthereumNFT.t.sol       # Test suite (55 tests)
-├── script/
-│   ├── Deploy.s.sol                    # Deployment scripts (10+)
-│   └── GenerateMerkleRoot.s.sol        # Merkle Root generator
-├── scripts/
-│   └── generateMerkleTree.js           # JavaScript Merkle Tree generator
-├── metadata/
-│   └── 1.json                          # NFT metadata example
-├── lib/
-│   ├── forge-std/                      # Foundry standard library
-│   └── openzeppelin-contracts/         # OpenZeppelin v5.1.0
-├── foundry.toml                        # Foundry configuration
-└── package.json                        # Node.js dependencies
-```
-
 ## 🛠️ Installation & Setup
 
 ### Prerequisites

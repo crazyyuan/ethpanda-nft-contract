@@ -331,6 +331,7 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         uint256 remaining = config.maxSupply - currentSupply;
 
         config.mintEnded = true;
+        config.maxSupply = currentSupply; // lock maxSupply to minted amount (burn unminted quota)
 
         emit MintPermanentlyEnded(tokenId, remaining);
     }

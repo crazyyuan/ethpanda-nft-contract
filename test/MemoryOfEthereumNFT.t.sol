@@ -820,6 +820,8 @@ contract MemoryOfEthereumNFTTest is Test {
             uint256(MemoryOfEthereumNFT.MintPhase.Ended)
         );
         assertEq(nft.remainingSupply(tokenId1), 0);
+        (, uint256 maxSupplyAfter, , , , , , , , ) = nft.getTokenInfo(tokenId1);
+        assertEq(maxSupplyAfter, nft.totalSupply(tokenId1));
 
         // tokenId2 不受影响
         assertEq(
