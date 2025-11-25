@@ -42,6 +42,7 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         uint256 whitelistStartTime;
         uint256 publicStartTime;
         bool mintEnded;
+        bool transferable;
         string upgradeName; // e.g. "Shapella", "Dencun"
     }
 
@@ -94,6 +95,7 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
      * @param publicMaxPerAddress per-address limit in public phase
      * @param whitelistPrice price per token in whitelist phase
      * @param publicPrice price per token in public phase
+     * @param transferable whether the token can be transferred (false -> SBT-like)
      */
     function createToken(
         string memory upgradeName,
@@ -101,7 +103,8 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         uint256 whitelistMaxPerAddress,
         uint256 publicMaxPerAddress,
         uint256 whitelistPrice,
-        uint256 publicPrice
+        uint256 publicPrice,
+        bool transferable
     ) external onlyRole(ADMIN_ROLE) returns (uint256) {
         require(maxSupply > 0, "Max supply must be greater than 0");
         require(whitelistMaxPerAddress > 0, "Whitelist max must be greater than 0");
@@ -120,6 +123,7 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
             whitelistStartTime: 0,
             publicStartTime: 0,
             mintEnded: false,
+            transferable: transferable,
             upgradeName: upgradeName
         });
 
@@ -440,7 +444,8 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         uint256 whitelistPrice,
         uint256 publicPrice,
         MintPhase phase,
-        bool ended
+        bool ended,
+        bool transferable
     ) {
         require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
         TokenConfig storage config = tokenConfigs[tokenId];
@@ -454,7 +459,8 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
             config.whitelistPrice,
             config.publicPrice,
             getCurrentPhase(tokenId),
-            config.mintEnded
+            config.mintEnded,
+            config.transferable
         );
     }
 
@@ -464,6 +470,12 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         uint256[] memory ids,
         uint256[] memory values
     ) internal override(ERC1155, ERC1155Supply) {
+        if (from != address(0) && to != address(0)) {
+            for (uint256 i = 0; i < ids.length; i++) {
+                require(tokenConfigs[ids[i]].transferable, "Transfers disabled");
+            }
+        }
+
         super._update(from, to, ids, values);
     }
 

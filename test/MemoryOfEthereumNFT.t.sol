@@ -78,8 +78,8 @@ contract MemoryOfEthereumNFTTest is Test {
         vm.deal(user3, 10 ether);
 
         // 创建两个 Token（默认价格为 0）
-        tokenId1 = nft.createToken("Shapella", 10000, 5, 1, 0, 0);
-        tokenId2 = nft.createToken("Dencun", 8000, 3, 2, 0, 0);
+        tokenId1 = nft.createToken("Shapella", 10000, 5, 1, 0, 0, true);
+        tokenId2 = nft.createToken("Dencun", 8000, 3, 2, 0, 0, true);
 
         // 设置 Merkle Tree (user1 和 user2 在白名单中)
         bytes32 leaf1 = keccak256(abi.encodePacked(user1));
@@ -119,7 +119,7 @@ contract MemoryOfEthereumNFTTest is Test {
         vm.expectEmit(true, false, false, true);
         emit TokenCreated(3, "Fusaka", 5000);
 
-        uint256 newTokenId = nft.createToken("Fusaka", 5000, 2, 1, 0, 0);
+        uint256 newTokenId = nft.createToken("Fusaka", 5000, 2, 1, 0, 0, true);
 
         assertEq(newTokenId, 3);
         assertEq(nft.currentTokenId(), 3);
@@ -132,8 +132,9 @@ contract MemoryOfEthereumNFTTest is Test {
             uint256 publicMax,
             uint256 whitelistPrice,
             uint256 publicPrice,
-            ,
-
+            MemoryOfEthereumNFT.MintPhase phase,
+            bool ended,
+            bool transferable
         ) = nft.getTokenInfo(newTokenId);
 
         assertEq(upgradeName, "Fusaka");
@@ -142,6 +143,8 @@ contract MemoryOfEthereumNFTTest is Test {
         assertEq(publicMax, 1);
         assertEq(whitelistPrice, 0);
         assertEq(publicPrice, 0);
+        assertFalse(ended);
+        assertTrue(transferable);
     }
 
     function testCreateTokenWithPrice() public {
@@ -151,21 +154,31 @@ contract MemoryOfEthereumNFTTest is Test {
             2,
             1,
             0.01 ether,
-            0.02 ether
+            0.02 ether,
+            true
         );
 
-        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , ) = nft
+        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , , ) = nft
             .getTokenInfo(newTokenId);
 
         assertEq(whitelistPrice, 0.01 ether);
         assertEq(publicPrice, 0.02 ether);
     }
 
+    function testEnforceSBT() public {
+        uint256 badgeId = nft.createToken("Badge", 100, 1, 1, 0, 0, false);
+        nft.adminMint(badgeId, user1, 1);
+
+        vm.prank(user1);
+        vm.expectRevert("Transfers disabled");
+        nft.safeTransferFrom(user1, user2, badgeId, 1, "");
+    }
+
     function testCreateTokenDefaultPriceZero() public {
         // 明确测试默认价格为 0
-        uint256 newTokenId = nft.createToken("Fusaka", 5000, 2, 1, 0, 0);
+        uint256 newTokenId = nft.createToken("Fusaka", 5000, 2, 1, 0, 0, true);
 
-        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , ) = nft
+        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , , ) = nft
             .getTokenInfo(newTokenId);
 
         assertEq(whitelistPrice, 0);
@@ -182,7 +195,8 @@ contract MemoryOfEthereumNFTTest is Test {
             uint256 whitelistPrice,
             uint256 publicPrice,
             MemoryOfEthereumNFT.MintPhase phase,
-            bool ended
+            bool ended,
+            bool transferable
         ) = nft.getTokenInfo(tokenId1);
 
         assertEq(upgradeName, "Shapella");
@@ -192,6 +206,7 @@ contract MemoryOfEthereumNFTTest is Test {
         assertEq(publicMax, 1);
         assertEq(whitelistPrice, 0);
         assertEq(publicPrice, 0);
+        assertTrue(transferable);
         assertEq(
             uint256(phase),
             uint256(MemoryOfEthereumNFT.MintPhase.NotStarted)
@@ -221,6 +236,7 @@ contract MemoryOfEthereumNFTTest is Test {
             uint256 publicMax,
             uint256 whitelistPrice,
             uint256 publicPrice,
+            ,
             ,
 
         ) = nft.getTokenInfo(tokenId1);
@@ -303,7 +319,7 @@ contract MemoryOfEthereumNFTTest is Test {
         uint256 price = 0.01 ether;
         nft.startWhitelistPhase(tokenId1, price);
 
-        (, , , , , uint256 whitelistPrice, , , ) = nft.getTokenInfo(tokenId1);
+        (, , , , , uint256 whitelistPrice, , , , ) = nft.getTokenInfo(tokenId1);
         assertEq(whitelistPrice, price);
     }
 
@@ -327,7 +343,7 @@ contract MemoryOfEthereumNFTTest is Test {
         uint256 price = 0.02 ether;
         nft.startPublicPhase(tokenId1, price);
 
-        (, , , , , , uint256 publicPrice, , ) = nft.getTokenInfo(tokenId1);
+        (, , , , , , uint256 publicPrice, , , ) = nft.getTokenInfo(tokenId1);
         assertEq(publicPrice, price);
     }
 
@@ -335,7 +351,7 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testDefaultPriceIsZero() public view {
         // 验证新创建的 token 默认价格为 0
-        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , ) = nft
+        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , , ) = nft
             .getTokenInfo(tokenId1);
         assertEq(whitelistPrice, 0);
         assertEq(publicPrice, 0);
@@ -372,7 +388,7 @@ contract MemoryOfEthereumNFTTest is Test {
         // 通过 updateTokenConfig 设置价格
         nft.updateTokenConfig(tokenId1, 10000, 5, 1, 0.01 ether, 0.02 ether);
 
-        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , ) = nft
+        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , , ) = nft
             .getTokenInfo(tokenId1);
         assertEq(whitelistPrice, 0.01 ether);
         assertEq(publicPrice, 0.02 ether);
@@ -380,7 +396,7 @@ contract MemoryOfEthereumNFTTest is Test {
         // 然后启动阶段
         nft.startWhitelistPhase(tokenId1, 0.015 ether); // 可以在启动时覆盖价格
 
-        (, , , , , uint256 updatedWhitelistPrice, , , ) = nft.getTokenInfo(
+        (, , , , , uint256 updatedWhitelistPrice, , , , ) = nft.getTokenInfo(
             tokenId1
         );
         assertEq(updatedWhitelistPrice, 0.015 ether);
@@ -391,7 +407,7 @@ contract MemoryOfEthereumNFTTest is Test {
         nft.updateTokenConfig(tokenId1, 10000, 5, 1, 0.01 ether, 0.02 ether);
         nft.updateTokenConfig(tokenId1, 10000, 5, 1, 0.02 ether, 0.03 ether);
 
-        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , ) = nft
+        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , , ) = nft
             .getTokenInfo(tokenId1);
         assertEq(whitelistPrice, 0.02 ether);
         assertEq(publicPrice, 0.03 ether);
@@ -652,7 +668,7 @@ contract MemoryOfEthereumNFTTest is Test {
         nft.startPublicPhase(tokenId1, 0.05 ether);
 
         // 检查价格设置
-        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , ) = nft
+        (, , , , , uint256 whitelistPrice, uint256 publicPrice, , , ) = nft
             .getTokenInfo(tokenId1);
         assertEq(whitelistPrice, 0.01 ether);
         assertEq(publicPrice, 0.05 ether);
@@ -876,7 +892,8 @@ contract MemoryOfEthereumNFTTest is Test {
             2,
             1,
             0.01 ether,
-            0.02 ether
+            0.02 ether,
+            true
         );
         nft.setMerkleRoot(newTokenId, merkleRoot);
 

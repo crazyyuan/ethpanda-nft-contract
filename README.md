@@ -24,6 +24,7 @@ Memory of Ethereum is an innovative NFT project that releases a unique NFT serie
 - ✅ **Flexible Pricing**: Support free/paid minting with different prices for whitelist and public phases
 - ✅ **Automatic Refunds**: Excess ETH automatically refunded to users
 - ✅ **Fund Management**: Admins can withdraw contract revenue
+- ✅ **NFT or SBT**: Per-token transferability toggle so commemorative badges can be non-transferable
 
 ### Minting Mechanism
 
@@ -52,9 +53,9 @@ Memory of Ethereum is an innovative NFT project that releases a unique NFT serie
 ```
 memory-of-ethereum-nft/
 ├── src/
-│   └── MemoryOfEthereumNFT.sol         # Main contract (483 lines)
+│   └── MemoryOfEthereumNFT.sol         # Main contract (495 lines)
 ├── test/
-│   └── MemoryOfEthereumNFT.t.sol       # Test suite (54 tests)
+│   └── MemoryOfEthereumNFT.t.sol       # Test suite (55 tests)
 ├── script/
 │   ├── Deploy.s.sol                    # Deployment scripts (10+)
 │   └── GenerateMerkleRoot.s.sol        # Merkle Root generator
@@ -123,6 +124,7 @@ WHITELIST_MAX_PER_ADDRESS=5
 PUBLIC_MAX_PER_ADDRESS=1
 WHITELIST_PRICE=0
 PUBLIC_PRICE=0
+TRANSFERABLE=true
 
 # Fill after deployment
 NFT_ADDRESS=0x...

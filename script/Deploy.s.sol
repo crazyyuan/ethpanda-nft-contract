@@ -59,6 +59,7 @@ contract CreateTokenScript is Script {
         uint256 publicMax = vm.envUint("PUBLIC_MAX_PER_ADDRESS");
         uint256 whitelistPrice = vm.envOr("WHITELIST_PRICE", uint256(0));
         uint256 publicPrice = vm.envOr("PUBLIC_PRICE", uint256(0));
+        bool transferable = vm.envOr("TRANSFERABLE", true);
         
         vm.startBroadcast(deployerPrivateKey);
         
@@ -70,7 +71,8 @@ contract CreateTokenScript is Script {
             whitelistMax,
             publicMax,
             whitelistPrice,
-            publicPrice
+            publicPrice,
+            transferable
         );
         
         console.log("=== Token Created ===");
@@ -81,6 +83,7 @@ contract CreateTokenScript is Script {
         console.log("Public Max Per Address:", publicMax);
         console.log("Whitelist Price:", whitelistPrice);
         console.log("Public Price:", publicPrice);
+        console.log("Transferable:", transferable);
         
         vm.stopBroadcast();
     }
@@ -265,7 +268,8 @@ contract QueryTokenInfoScript is Script {
             uint256 whitelistPrice,
             uint256 publicPrice,
             MemoryOfEthereumNFT.MintPhase phase,
-            bool ended
+            bool ended,
+            bool transferable
         ) = nft.getTokenInfo(tokenId);
         
         console.log("=== Token Info ===");
@@ -289,6 +293,7 @@ contract QueryTokenInfoScript is Script {
         console.log("=== Status ===");
         console.log("Current Phase:", uint256(phase));
         console.log("Mint Ended:", ended);
+        console.log("Transferable:", transferable);
     }
 }
 

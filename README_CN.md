@@ -24,6 +24,7 @@ Memory of Ethereum 是一个创新的 NFT 项目，每次以太坊重大升级�
 - ✅ **灵活定价**: 支持免费/付费铸造，可针对白名单和公开阶段设置不同价格
 - ✅ **自动退款**: 用户支付多余的 ETH 会自动退还
 - ✅ **资金管理**: 管理员可提取合约收益
+- ✅ **NFT/SBT 可选**: 每个 Token 可配置是否允许转移，纪念勋章可设为不可转移
 
 ### 铸造机制
 
@@ -52,9 +53,9 @@ Memory of Ethereum 是一个创新的 NFT 项目，每次以太坊重大升级�
 ```
 memory-of-ethereum-nft/
 ├── src/
-│   └── MemoryOfEthereumNFT.sol         # 主合约 (483 行)
+│   └── MemoryOfEthereumNFT.sol         # 主合约 (495 行)
 ├── test/
-│   └── MemoryOfEthereumNFT.t.sol       # 测试文件 (54 个测试)
+│   └── MemoryOfEthereumNFT.t.sol       # 测试文件 (55 个测试)
 ├── script/
 │   ├── Deploy.s.sol                    # 部署和管理脚本 (10+ 脚本)
 │   └── GenerateMerkleRoot.s.sol        # Merkle Root 生成工具
@@ -123,6 +124,7 @@ WHITELIST_MAX_PER_ADDRESS=5
 PUBLIC_MAX_PER_ADDRESS=1
 WHITELIST_PRICE=0
 PUBLIC_PRICE=0
+TRANSFERABLE=true
 
 # 部署后填写
 NFT_ADDRESS=0x...
