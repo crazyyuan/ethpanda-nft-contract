@@ -18,21 +18,25 @@ Memory of Ethereum 是一个创新的 NFT 项目，每次以太坊重大升级�
 ## 🚀 主要特性
 
 ### 核心功能
+
 - ✅ **多 Token 支持**: 每次以太坊升级创建新的 Token ID
 - ✅ **数据隔离**: 每个 Token 拥有独立的配置、白名单和用户记录
 - ✅ **灵活定价**: 支持免费/付费铸造，可针对白名单和公开阶段设置不同价格
 - ✅ **自动退款**: 用户支付多余的 ETH 会自动退还
 - ✅ **资金管理**: 管理员可提取合约收益
+- ✅ **NFT/SBT 可选**: 每个 Token 可配置是否允许转移，纪念勋章可设为不可转移
 
 ### 铸造机制
+
 - 🎫 **白名单阶段**: 使用 Merkle Tree 验证，高效且 gas 优化
 - 🌍 **公开阶段**: 向所有人开放
-- 🎛️ **手动控制**: 管理员可随时开启/结束各阶段
+- 🕒 **时间控制**: 通过时间戳预先配置阶段（也可以跳过白名单）
 - 🔒 **永久结束**: 可永久禁止某个 Token 继续铸造
 
 ### 权限管理
+
 - 👥 **多管理员**: 基于 OpenZeppelin AccessControl
-- 🔐 **角色分离**: DEFAULT_ADMIN_ROLE 和 ADMIN_ROLE 两级权限
+- 🧭 **Owner 总控**: 部署者为 owner；只有 owner 可管理管理员
 - ⚡ **灵活操作**: 支持动态添加/移除管理员
 
 ## 📋 技术栈
@@ -43,28 +47,6 @@ Memory of Ethereum 是一个创新的 NFT 项目，每次以太坊重大升级�
 - **Solidity 版本**: ^0.8.24
 - **编译优化**: via-ir 模式
 - **白名单机制**: Merkle Tree
-
-## 🏗️ 项目结构
-
-```
-ethpanda-nft/
-├── src/
-│   └── EthereumOfMemoryNFT.sol         # 主合约 (521 行)
-├── test/
-│   └── EthereumOfMemoryNFT.t.sol       # 测试文件 (54 个测试)
-├── script/
-│   ├── Deploy.s.sol                    # 部署和管理脚本 (10+ 脚本)
-│   └── GenerateMerkleRoot.s.sol        # Merkle Root 生成工具
-├── scripts/
-│   └── generateMerkleTree.js           # JavaScript Merkle Tree 生成
-├── metadata/
-│   └── 1.json                          # NFT metadata 示例
-├── lib/
-│   ├── forge-std/                      # Foundry 标准库
-│   └── openzeppelin-contracts/         # OpenZeppelin v5.1.0
-├── foundry.toml                        # Foundry 配置
-└── package.json                        # Node.js 依赖
-```
 
 ## 🛠️ 安装和设置
 
@@ -79,7 +61,7 @@ ethpanda-nft/
 ```bash
 # 克隆仓库
 git clone <repository-url>
-cd ethpanda-nft
+cd memory-of-ethereum-nft
 
 # 初始化 git 子模块
 git submodule update --init --recursive
@@ -120,6 +102,7 @@ WHITELIST_MAX_PER_ADDRESS=5
 PUBLIC_MAX_PER_ADDRESS=1
 WHITELIST_PRICE=0
 PUBLIC_PRICE=0
+TRANSFERABLE=true
 
 # 部署后填写
 NFT_ADDRESS=0x...
@@ -160,7 +143,7 @@ forge coverage
 npm run deploy:sepolia
 ```
 
-这会部署 `EthereumOfMemoryNFT` 合约并输出合约地址。
+这会部署 `MemoryOfEthereumNFT` 合约并输出合约地址。
 
 ### 2. 创建第一个 Token
 
@@ -210,24 +193,18 @@ forge script script/Deploy.s.sol:SetupWhitelistScript \
   --broadcast
 ```
 
-### 5. 开始白名单阶段
+### 5. 设置阶段时间（白名单/公开）
+
+预先配置时间戳（白名单可设为 0 跳过）：
 
 ```bash
 export TOKEN_ID=1
-export WHITELIST_PRICE=0  # 或设置价格，如 10000000000000000 (0.01 ETH)
+export WHITELIST_START_TIME=1710000000   # 设为 0 表示跳过白名单
+export PUBLIC_START_TIME=1710003600      # 必须大于白名单开始时间（或在跳过模式下 >0）
+export WHITELIST_PRICE=0                 # 可选覆盖价格
+export PUBLIC_PRICE=0
 
-forge script script/Deploy.s.sol:StartWhitelistPhaseScript \
-  --rpc-url sepolia \
-  --broadcast
-```
-
-### 6. 开始公开阶段
-
-```bash
-export TOKEN_ID=1
-export PUBLIC_PRICE=0  # 或设置价格
-
-forge script script/Deploy.s.sol:StartPublicPhaseScript \
+forge script script/Deploy.s.sol:SetPhaseTimesScript \
   --rpc-url sepolia \
   --broadcast
 ```
@@ -303,12 +280,13 @@ function whitelistMint(
 ```
 
 使用示例：
+
 ```javascript
 // 免费铸造
 await nft.whitelistMint(1, 3, proof);
 
 // 付费铸造 (0.01 ETH per NFT)
-await nft.whitelistMint(1, 3, proof, { value: ethers.parseEther("0.03") });
+await nft.whitelistMint(1, 3, proof, { value: ethers.parseEther('0.03') });
 ```
 
 #### 公开铸造
@@ -318,21 +296,16 @@ function publicMint(uint256 tokenId, uint256 amount) external payable;
 ```
 
 使用示例：
+
 ```javascript
 // 免费铸造
 await nft.publicMint(1, 1);
 
 // 付费铸造
-await nft.publicMint(1, 1, { value: ethers.parseEther("0.02") });
+await nft.publicMint(1, 1, { value: ethers.parseEther('0.02') });
 ```
 
 ### 管理功能
-
-#### 管理员铸造（免费）
-
-```solidity
-function adminMint(uint256 tokenId, address to, uint256 amount) external;
-```
 
 #### 结束铸造
 
@@ -408,32 +381,30 @@ nft.startWhitelistPhase(2, 0);
 
 每个 Token 的以下数据完全独立：
 
-| 数据项 | 说明 |
-|--------|------|
-| maxSupply | 最大供应量 |
-| whitelistMaxPerAddress | 白名单每地址限额 |
-| publicMaxPerAddress | 公开每地址限额 |
-| whitelistPrice | 白名单价格 |
-| publicPrice | 公开价格 |
-| merkleRoot | 白名单 Merkle Root |
-| phase | 当前阶段状态 |
-| whitelistMinted | 用户白名单铸造记录 |
-| publicMinted | 用户公开铸造记录 |
+| 数据项                 | 说明               |
+| ---------------------- | ------------------ |
+| maxSupply              | 最大供应量         |
+| whitelistMaxPerAddress | 白名单每地址限额   |
+| publicMaxPerAddress    | 公开每地址限额     |
+| whitelistPrice         | 白名单价格         |
+| publicPrice            | 公开价格           |
+| merkleRoot             | 白名单 Merkle Root |
+| phase                  | 当前阶段状态       |
+| whitelistMinted        | 用户白名单铸造记录 |
+| publicMinted           | 用户公开铸造记录   |
 
 ## 🔐 权限系统
 
 ### 角色定义
 
-- **DEFAULT_ADMIN_ROLE** (最高权限)
-  - 添加/移除 ADMIN_ROLE
-  - 拥有所有 ADMIN_ROLE 权限
+- **Owner** (最高权限)
+  - 可添加/移除管理员
+  - 默认持有 ADMIN_ROLE
 
 - **ADMIN_ROLE** (操作权限)
   - 创建 Token
   - 更新配置
   - 设置白名单
-  - 开始/结束阶段
-  - 管理员铸造
   - 提取资金
 
 ### 多管理员示例
@@ -452,19 +423,17 @@ forge script script/Deploy.s.sol:RemoveAdminScript --rpc-url sepolia --broadcast
 
 项目提供了丰富的管理脚本：
 
-| 脚本 | 功能 |
-|------|------|
-| `DeployScript` | 部署主合约 |
-| `CreateTokenScript` | 创建新 Token |
-| `SetupWhitelistScript` | 设置白名单 |
-| `StartWhitelistPhaseScript` | 开始白名单阶段 |
-| `StartPublicPhaseScript` | 开始公开阶段 |
-| `EndMintPermanentlyScript` | 永久结束铸造 |
-| `AdminMintScript` | 管理员铸造 |
-| `WithdrawScript` | 提取资金 |
-| `QueryTokenInfoScript` | 查询 Token 信息 |
-| `AddAdminScript` | 添加管理员 |
-| `RemoveAdminScript` | 移除管理员 |
+| 脚本                       | 功能                |
+| -------------------------- | ------------------- |
+| `DeployScript`             | 部署主合约          |
+| `CreateTokenScript`        | 创建新 Token        |
+| `SetupWhitelistScript`     | 设置白名单          |
+| `SetPhaseTimesScript`      | 更新白名单/公开时间 |
+| `EndMintPermanentlyScript` | 永久结束铸造        |
+| `WithdrawScript`           | 提取资金            |
+| `QueryTokenInfoScript`     | 查询 Token 信息     |
+| `AddAdminScript`           | 添加管理员          |
+| `RemoveAdminScript`        | 移除管理员          |
 
 ## 🎨 Metadata
 
@@ -524,6 +493,7 @@ mainnet = { key = "${ETHERSCAN_API_KEY}" }
 ### 自动验证
 
 部署时自动验证：
+
 ```bash
 npm run deploy:sepolia
 ```
@@ -531,6 +501,7 @@ npm run deploy:sepolia
 ### 手动验证
 
 如果自动验证失败：
+
 ```bash
 export CONTRACT_ADDRESS=0x...
 export BASE_URI=ipfs://YOUR_CID/
@@ -562,6 +533,7 @@ npm run verify:sepolia
 ### 审计建议
 
 在主网部署前建议：
+
 - 🔒 进行专业的安全审计
 - 🔒 在测试网进行充分测试
 - 🔒 使用多签钱包管理 DEFAULT_ADMIN_ROLE
@@ -579,4 +551,3 @@ MIT License
 ---
 
 **Built with ❤️ for the Ethereum Community**
-
