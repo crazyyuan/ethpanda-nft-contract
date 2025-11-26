@@ -36,7 +36,7 @@ Memory of Ethereum 是一个创新的 NFT 项目，每次以太坊重大升级�
 ### 权限管理
 
 - 👥 **多管理员**: 基于 OpenZeppelin AccessControl
-- 🔐 **角色分离**: DEFAULT_ADMIN_ROLE 和 ADMIN_ROLE 两级权限
+- 🧭 **Owner 总控**: 部署者为 owner；owner 和管理员都可管理管理员
 - ⚡ **灵活操作**: 支持动态添加/移除管理员
 
 ## 📋 技术栈
@@ -409,16 +409,14 @@ nft.startWhitelistPhase(2, 0);
 
 ### 角色定义
 
-- **DEFAULT_ADMIN_ROLE** (最高权限)
-
-  - 添加/移除 ADMIN_ROLE
-  - 拥有所有 ADMIN_ROLE 权限
+- **Owner** (最高权限)
+  - 可添加/移除管理员
+  - 默认持有 ADMIN_ROLE
 
 - **ADMIN_ROLE** (操作权限)
   - 创建 Token
   - 更新配置
   - 设置白名单
-  - 开始/结束阶段
   - 管理员铸造
   - 提取资金
 

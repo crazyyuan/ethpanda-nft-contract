@@ -13,21 +13,18 @@ contract DeployScript is Script {
     string constant SYMBOL = "MoE";
     string constant BASE_URI = "https://apricot-embarrassed-locust-895.mypinata.cloud/ipfs/bafybeibbwkzoznk24jn3ulqm6xkn2iq5mjubphgmtwydidpdgmdtmm76ma/";
 
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
-
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address defaultAdmin = vm.envOr("DEFAULT_ADMIN", vm.addr(deployerPrivateKey));
+        address deployer = vm.addr(deployerPrivateKey);
 
         vm.startBroadcast(deployerPrivateKey);
 
-        MemoryOfEthereumNFT nft = new MemoryOfEthereumNFT(NAME, SYMBOL, BASE_URI, defaultAdmin);
+        MemoryOfEthereumNFT nft = new MemoryOfEthereumNFT(NAME, SYMBOL, BASE_URI);
 
         console.log("=== MemoryOfEthereumNFT Deployed ===");
         console.log("Contract Address:", address(nft));
-        console.log("Default Admin:", defaultAdmin);
-        console.log("Is Admin:", nft.hasRole(ADMIN_ROLE, defaultAdmin));
+        console.log("Owner:", deployer);
+        console.log("Is Admin:", nft.hasRole(nft.ADMIN_ROLE(), deployer));
         console.log("Name:", nft.name());
         console.log("Symbol:", nft.symbol());
         console.log("Current Token ID:", nft.currentTokenId());

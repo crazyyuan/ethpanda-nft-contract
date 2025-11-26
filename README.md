@@ -36,7 +36,7 @@ Memory of Ethereum is an innovative NFT project that releases a unique NFT serie
 ### Permission Management
 
 - 👥 **Multi-Admin**: Based on OpenZeppelin AccessControl
-- 🔐 **Role Separation**: Two-level permissions (DEFAULT_ADMIN_ROLE and ADMIN_ROLE)
+- 🧭 **Owner as Root**: Deployer is owner; owner and admins can add/remove admins
 - ⚡ **Flexible Operations**: Support dynamic admin add/remove
 
 ## 📋 Tech Stack
@@ -407,18 +407,15 @@ Each token has completely independent data:
 
 ## 🔐 Permission System
 
-### Role Definitions
+### Roles
 
-- **DEFAULT_ADMIN_ROLE** (Highest Permission)
-
-  - Add/remove ADMIN_ROLE
-  - Has all ADMIN_ROLE permissions
-
+- **Owner** (Highest Permission)
+  - Can add/remove admins
+  - Holds ADMIN_ROLE by default
 - **ADMIN_ROLE** (Operational Permission)
   - Create tokens
   - Update configuration
   - Set whitelist
-  - Start/end phases
   - Admin mint
   - Withdraw funds
 

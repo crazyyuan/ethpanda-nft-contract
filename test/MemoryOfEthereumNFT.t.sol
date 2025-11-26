@@ -18,7 +18,6 @@ contract MemoryOfEthereumNFTTest is Test {
     string constant BASE_URI = "https://api.example.com/metadata/";
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
 
     uint256 public tokenId1;
     uint256 public tokenId2;
@@ -53,6 +52,7 @@ contract MemoryOfEthereumNFTTest is Test {
     event AdminRemoved(address indexed account);
     event FundsWithdrawn(address indexed to, uint256 amount);
     event TokenURIUpdated(uint256 indexed tokenId, string newURI);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     function _setConfig(
         uint256 tokenId,
@@ -131,7 +131,7 @@ contract MemoryOfEthereumNFTTest is Test {
         user2 = makeAddr("user2");
         user3 = makeAddr("user3");
 
-        nft = new MemoryOfEthereumNFT(NAME, SYMBOL, BASE_URI, admin);
+        nft = new MemoryOfEthereumNFT(NAME, SYMBOL, BASE_URI);
 
         // 为测试用户提供 ETH
         vm.deal(user1, 10 ether);
@@ -173,7 +173,7 @@ contract MemoryOfEthereumNFTTest is Test {
         assertEq(nft.name(), NAME);
         assertEq(nft.symbol(), SYMBOL);
         assertEq(nft.currentTokenId(), 2);
-        assertTrue(nft.hasRole(DEFAULT_ADMIN_ROLE, admin));
+        assertEq(nft.owner(), admin);
         assertTrue(nft.hasRole(ADMIN_ROLE, admin));
     }
 
@@ -359,6 +359,33 @@ contract MemoryOfEthereumNFTTest is Test {
 
         assertFalse(nft.hasRole(ADMIN_ROLE, admin2));
         assertFalse(nft.isAdmin(admin2));
+    }
+
+    function testAdminCanManageAdmins() public {
+        // admin (address(this)) can add/remove admins
+        nft.addAdmin(admin2);
+        assertTrue(nft.hasRole(ADMIN_ROLE, admin2));
+
+        nft.removeAdmin(admin2);
+        assertFalse(nft.hasRole(ADMIN_ROLE, admin2));
+    }
+
+    function testOwnerCanTransferAndManageAdmins() public {
+        address newOwner = admin2;
+
+        vm.expectEmit(true, true, false, true);
+        emit OwnershipTransferred(admin, newOwner);
+        nft.transferOwnership(newOwner);
+        assertEq(nft.owner(), newOwner);
+
+        // new owner (no roles) can still manage admins
+        vm.prank(newOwner);
+        nft.addAdmin(user1);
+        assertTrue(nft.hasRole(ADMIN_ROLE, user1));
+
+        vm.prank(newOwner);
+        nft.removeAdmin(user1);
+        assertFalse(nft.hasRole(ADMIN_ROLE, user1));
     }
 
     // ========== Phase 管理测试 ==========

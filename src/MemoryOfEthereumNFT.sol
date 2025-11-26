@@ -18,6 +18,9 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    address public owner;
     string public name;
     string public symbol;
 
@@ -73,20 +76,19 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
      * @param _name NFT name
      * @param _symbol NFT symbol
      * @param baseURI base metadata URI
-     * @param defaultAdmin address granted DEFAULT_ADMIN_ROLE and ADMIN_ROLE
      */
     constructor(
         string memory _name,
         string memory _symbol,
-        string memory baseURI,
-        address defaultAdmin
+        string memory baseURI
     ) ERC1155(baseURI) {
         name = _name;
         symbol = _symbol;
         _baseTokenURI = baseURI;
+        owner = msg.sender;
 
-        _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
-        _grantRole(ADMIN_ROLE, defaultAdmin);
+        _grantRole(ADMIN_ROLE, owner);
+        _setRoleAdmin(ADMIN_ROLE, ADMIN_ROLE);
     }
 
     /**
@@ -203,19 +205,36 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         return MintPhase.Public;
     }
 
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not owner");
+        _;
+    }
+
+    function transferOwnership(address newOwner) external onlyOwner {
+        require(newOwner != address(0), "New owner is zero address");
+        emit OwnershipTransferred(owner, newOwner);
+        owner = newOwner;
+    }
+
+    function _isAdminManager(address account) internal view returns (bool) {
+        return account == owner || hasRole(ADMIN_ROLE, account);
+    }
+
     /**
      * @dev Add a new admin
      */
-    function addAdmin(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        grantRole(ADMIN_ROLE, account);
+    function addAdmin(address account) external {
+        require(_isAdminManager(msg.sender), "Not authorized to manage admins");
+        _grantRole(ADMIN_ROLE, account);
         emit AdminAdded(account);
     }
 
     /**
      * @dev Remove an admin
      */
-    function removeAdmin(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        revokeRole(ADMIN_ROLE, account);
+    function removeAdmin(address account) external {
+        require(_isAdminManager(msg.sender), "Not authorized to manage admins");
+        _revokeRole(ADMIN_ROLE, account);
         emit AdminRemoved(account);
     }
 
