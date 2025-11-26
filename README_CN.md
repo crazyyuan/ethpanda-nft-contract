@@ -193,24 +193,18 @@ forge script script/Deploy.s.sol:SetupWhitelistScript \
   --broadcast
 ```
 
-### 5. 开始白名单阶段
+### 5. 设置阶段时间（白名单/公开）
+
+预先配置时间戳（白名单可设为 0 跳过）：
 
 ```bash
 export TOKEN_ID=1
-export WHITELIST_PRICE=0  # 或设置价格，如 10000000000000000 (0.01 ETH)
+export WHITELIST_START_TIME=1710000000   # 设为 0 表示跳过白名单
+export PUBLIC_START_TIME=1710003600      # 必须大于白名单开始时间（或在跳过模式下 >0）
+export WHITELIST_PRICE=0                 # 可选覆盖价格
+export PUBLIC_PRICE=0
 
-forge script script/Deploy.s.sol:StartWhitelistPhaseScript \
-  --rpc-url sepolia \
-  --broadcast
-```
-
-### 6. 开始公开阶段
-
-```bash
-export TOKEN_ID=1
-export PUBLIC_PRICE=0  # 或设置价格
-
-forge script script/Deploy.s.sol:StartPublicPhaseScript \
+forge script script/Deploy.s.sol:SetPhaseTimesScript \
   --rpc-url sepolia \
   --broadcast
 ```
@@ -313,12 +307,6 @@ await nft.publicMint(1, 1, { value: ethers.parseEther('0.02') });
 
 ### 管理功能
 
-#### 管理员铸造（免费）
-
-```solidity
-function adminMint(uint256 tokenId, address to, uint256 amount) external;
-```
-
 #### 结束铸造
 
 ```solidity
@@ -417,7 +405,6 @@ nft.startWhitelistPhase(2, 0);
   - 创建 Token
   - 更新配置
   - 设置白名单
-  - 管理员铸造
   - 提取资金
 
 ### 多管理员示例
@@ -436,19 +423,17 @@ forge script script/Deploy.s.sol:RemoveAdminScript --rpc-url sepolia --broadcast
 
 项目提供了丰富的管理脚本：
 
-| 脚本                        | 功能            |
-| --------------------------- | --------------- |
-| `DeployScript`              | 部署主合约      |
-| `CreateTokenScript`         | 创建新 Token    |
-| `SetupWhitelistScript`      | 设置白名单      |
-| `StartWhitelistPhaseScript` | 开始白名单阶段  |
-| `StartPublicPhaseScript`    | 开始公开阶段    |
-| `EndMintPermanentlyScript`  | 永久结束铸造    |
-| `AdminMintScript`           | 管理员铸造      |
-| `WithdrawScript`            | 提取资金        |
-| `QueryTokenInfoScript`      | 查询 Token 信息 |
-| `AddAdminScript`            | 添加管理员      |
-| `RemoveAdminScript`         | 移除管理员      |
+| 脚本                       | 功能                |
+| -------------------------- | ------------------- |
+| `DeployScript`             | 部署主合约          |
+| `CreateTokenScript`        | 创建新 Token        |
+| `SetupWhitelistScript`     | 设置白名单          |
+| `SetPhaseTimesScript`      | 更新白名单/公开时间 |
+| `EndMintPermanentlyScript` | 永久结束铸造        |
+| `WithdrawScript`           | 提取资金            |
+| `QueryTokenInfoScript`     | 查询 Token 信息     |
+| `AddAdminScript`           | 添加管理员          |
+| `RemoveAdminScript`        | 移除管理员          |
 
 ## 🎨 Metadata
 

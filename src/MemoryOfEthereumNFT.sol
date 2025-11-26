@@ -66,7 +66,6 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
     event TokenURIUpdated(uint256 indexed tokenId, string newURI);
     event WhitelistMint(uint256 indexed tokenId, address indexed minter, uint256 amount, uint256 totalPaid);
     event PublicMint(uint256 indexed tokenId, address indexed minter, uint256 amount, uint256 totalPaid);
-    event AdminMint(uint256 indexed tokenId, address indexed to, uint256 amount);
     event AdminAdded(address indexed account);
     event AdminRemoved(address indexed account);
     event FundsWithdrawn(address indexed to, uint256 amount);
@@ -335,20 +334,6 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         }
 
         emit PublicMint(tokenId, msg.sender, amount, totalPrice);
-    }
-
-    /**
-     * @dev Admin mint (free, no per-address limits)
-     */
-    function adminMint(uint256 tokenId, address to, uint256 amount) external onlyRole(ADMIN_ROLE) {
-        require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
-        TokenConfig storage config = tokenConfigs[tokenId];
-
-        require(!config.mintEnded, "Mint has permanently ended");
-        require(totalSupply(tokenId) + amount <= config.maxSupply, "Exceeds max supply");
-
-        _mint(to, tokenId, amount, "");
-        emit AdminMint(tokenId, to, amount);
     }
 
     /**

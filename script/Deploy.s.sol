@@ -187,35 +187,6 @@ contract EndMintPermanentlyScript is Script {
 }
 
 /**
- * @title Admin Mint Script
- * @dev Admin mints NFT
- */
-contract AdminMintScript is Script {
-    function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address nftAddress = vm.envAddress("NFT_ADDRESS");
-        uint256 tokenId = vm.envUint("TOKEN_ID");
-        address recipient = vm.envAddress("RECIPIENT_ADDRESS");
-        uint256 amount = vm.envUint("MINT_AMOUNT");
-
-        vm.startBroadcast(deployerPrivateKey);
-
-        MemoryOfEthereumNFT nft = MemoryOfEthereumNFT(payable(nftAddress));
-
-        console.log("=== Admin Mint ===");
-        console.log("Token ID:", tokenId);
-        console.log("Recipient:", recipient);
-        console.log("Amount:", amount);
-
-        nft.adminMint(tokenId, recipient, amount);
-
-        console.log("Recipient Balance:", nft.balanceOf(recipient, tokenId));
-
-        vm.stopBroadcast();
-    }
-}
-
-/**
  * @title Withdraw Funds Script
  * @dev Withdraws contract funds
  */

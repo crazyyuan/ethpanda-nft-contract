@@ -193,24 +193,18 @@ forge script script/Deploy.s.sol:SetupWhitelistScript \
   --broadcast
 ```
 
-### 5. Start Whitelist Phase
+### 5. Set Phase Times (whitelist/public)
+
+Configure start timestamps (whitelist can be 0 to skip):
 
 ```bash
 export TOKEN_ID=1
-export WHITELIST_PRICE=0  # Or set price, e.g., 10000000000000000 (0.01 ETH)
+export WHITELIST_START_TIME=1710000000   # 0 to skip whitelist
+export PUBLIC_START_TIME=1710003600      # must be > whitelist start (or >0 if skipping)
+export WHITELIST_PRICE=0                 # optional override
+export PUBLIC_PRICE=0
 
-forge script script/Deploy.s.sol:StartWhitelistPhaseScript \
-  --rpc-url sepolia \
-  --broadcast
-```
-
-### 6. Start Public Phase
-
-```bash
-export TOKEN_ID=1
-export PUBLIC_PRICE=0  # Or set price
-
-forge script script/Deploy.s.sol:StartPublicPhaseScript \
+forge script script/Deploy.s.sol:SetPhaseTimesScript \
   --rpc-url sepolia \
   --broadcast
 ```
@@ -311,14 +305,6 @@ await nft.publicMint(1, 1);
 await nft.publicMint(1, 1, { value: ethers.parseEther('0.02') });
 ```
 
-### Admin Functions
-
-#### Admin Mint (Free)
-
-```solidity
-function adminMint(uint256 tokenId, address to, uint256 amount) external;
-```
-
 #### End Minting
 
 ```solidity
@@ -416,7 +402,6 @@ Each token has completely independent data:
   - Create tokens
   - Update configuration
   - Set whitelist
-  - Admin mint
   - Withdraw funds
 
 ### Multi-Admin Example
@@ -435,19 +420,17 @@ forge script script/Deploy.s.sol:RemoveAdminScript --rpc-url sepolia --broadcast
 
 The project provides comprehensive management scripts:
 
-| Script                      | Function                |
-| --------------------------- | ----------------------- |
-| `DeployScript`              | Deploy main contract    |
-| `CreateTokenScript`         | Create new token        |
-| `SetupWhitelistScript`      | Setup whitelist         |
-| `StartWhitelistPhaseScript` | Start whitelist phase   |
-| `StartPublicPhaseScript`    | Start public phase      |
-| `EndMintPermanentlyScript`  | End minting permanently |
-| `AdminMintScript`           | Admin mint              |
-| `WithdrawScript`            | Withdraw funds          |
-| `QueryTokenInfoScript`      | Query token info        |
-| `AddAdminScript`            | Add admin               |
-| `RemoveAdminScript`         | Remove admin            |
+| Script                     | Function                      |
+| -------------------------- | ----------------------------- |
+| `DeployScript`             | Deploy main contract          |
+| `CreateTokenScript`        | Create new token              |
+| `SetupWhitelistScript`     | Setup whitelist               |
+| `SetPhaseTimesScript`      | Update whitelist/public times |
+| `EndMintPermanentlyScript` | End minting permanently       |
+| `WithdrawScript`           | Withdraw funds                |
+| `QueryTokenInfoScript`     | Query token info              |
+| `AddAdminScript`           | Add admin                     |
+| `RemoveAdminScript`        | Remove admin                  |
 
 ## 🎨 Metadata
 
