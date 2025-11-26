@@ -78,10 +78,7 @@ contract MemoryOfEthereumNFT is
     );
     event TokenConfigUpdated(uint256 indexed tokenId);
     event MerkleRootUpdated(uint256 indexed tokenId, bytes32 newMerkleRoot);
-    event MintPermanentlyEnded(
-        uint256 indexed tokenId,
-        uint256 remainingSupply
-    );
+    event MintPermanentlyEnded(uint256 indexed tokenId, uint256 mintEndTime);
     event PhaseTimesUpdated(
         uint256 indexed tokenId,
         uint256 whitelistStartTime,
@@ -439,13 +436,11 @@ contract MemoryOfEthereumNFT is
         require(!config.mintEnded, "Mint already ended");
 
         uint256 currentSupply = totalSupply(tokenId);
-        uint256 remaining = config.maxSupply - currentSupply;
-
         config.mintEnded = true;
         config.mintEndTime = block.timestamp;
         config.maxSupply = currentSupply; // lock maxSupply to minted amount (burn unminted quota)
 
-        emit MintPermanentlyEnded(tokenId, remaining);
+        emit MintPermanentlyEnded(tokenId, config.mintEndTime);
     }
 
     /**

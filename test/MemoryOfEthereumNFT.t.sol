@@ -71,10 +71,7 @@ contract MemoryOfEthereumNFTTest is Test {
         uint256 maxSupply
     );
     event TokenConfigUpdated(uint256 indexed tokenId);
-    event MintPermanentlyEnded(
-        uint256 indexed tokenId,
-        uint256 remainingSupply
-    );
+    event MintPermanentlyEnded(uint256 indexed tokenId, uint256 mintEndTime);
     event WhitelistMint(
         uint256 indexed tokenId,
         address indexed minter,
@@ -1181,10 +1178,9 @@ contract MemoryOfEthereumNFTTest is Test {
 
         vm.prank(user1);
         nft.whitelistMint(tokenId1, 100, merkleProof1);
-        uint256 remaining = nft.remainingSupply(tokenId1);
 
         vm.expectEmit(true, false, false, true);
-        emit MintPermanentlyEnded(tokenId1, remaining);
+        emit MintPermanentlyEnded(tokenId1, block.timestamp);
 
         nft.endMintPermanently(tokenId1);
 
