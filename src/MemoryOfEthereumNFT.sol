@@ -3,9 +3,15 @@ pragma solidity ^0.8.24;
 
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import {ERC1155Burnable} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
-import {ERC1155Supply} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
-import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import {
+    ERC1155Burnable
+} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
+import {
+    ERC1155Supply
+} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
+import {
+    MerkleProof
+} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
@@ -13,12 +19,20 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
  * @dev ERC1155 collection with one tokenId per Ethereum upgrade.
  * @notice Memory of Ethereum NFT: each upgrade is a separate series.
  */
-contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply {
+contract MemoryOfEthereumNFT is
+    ERC1155,
+    AccessControl,
+    ERC1155Burnable,
+    ERC1155Supply
+{
     using Strings for uint256;
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
 
     address public owner;
     string public name;
@@ -57,15 +71,36 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
 
     mapping(uint256 => mapping(address => uint256)) public publicMinted;
 
-    event TokenCreated(uint256 indexed tokenId, string upgradeName, uint256 maxSupply);
+    event TokenCreated(
+        uint256 indexed tokenId,
+        string upgradeName,
+        uint256 maxSupply
+    );
     event TokenConfigUpdated(uint256 indexed tokenId);
     event MerkleRootUpdated(uint256 indexed tokenId, bytes32 newMerkleRoot);
-    event MintPermanentlyEnded(uint256 indexed tokenId, uint256 remainingSupply);
-    event PhaseTimesUpdated(uint256 indexed tokenId, uint256 whitelistStartTime, uint256 publicStartTime);
+    event MintPermanentlyEnded(
+        uint256 indexed tokenId,
+        uint256 remainingSupply
+    );
+    event PhaseTimesUpdated(
+        uint256 indexed tokenId,
+        uint256 whitelistStartTime,
+        uint256 publicStartTime
+    );
     event BaseURIUpdated(string newBaseURI);
     event TokenURIUpdated(uint256 indexed tokenId, string newURI);
-    event WhitelistMint(uint256 indexed tokenId, address indexed minter, uint256 amount, uint256 totalPaid);
-    event PublicMint(uint256 indexed tokenId, address indexed minter, uint256 amount, uint256 totalPaid);
+    event WhitelistMint(
+        uint256 indexed tokenId,
+        address indexed minter,
+        uint256 amount,
+        uint256 totalPaid
+    );
+    event PublicMint(
+        uint256 indexed tokenId,
+        address indexed minter,
+        uint256 amount,
+        uint256 totalPaid
+    );
     event AdminAdded(address indexed account);
     event AdminRemoved(address indexed account);
     event FundsWithdrawn(address indexed to, uint256 amount);
@@ -114,7 +149,10 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         bool transferable
     ) external onlyRole(ADMIN_ROLE) returns (uint256) {
         require(maxSupply > 0, "Max supply must be greater than 0");
-        require(whitelistMaxPerAddress > 0, "Whitelist max must be greater than 0");
+        require(
+            whitelistMaxPerAddress > 0,
+            "Whitelist max must be greater than 0"
+        );
         require(publicMaxPerAddress > 0, "Public max must be greater than 0");
         _validatePhaseTimes(whitelistStartTime, publicStartTime);
 
@@ -156,7 +194,10 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
         TokenConfig storage config = tokenConfigs[tokenId];
         require(!config.mintEnded, "Token mint has ended");
-        require(maxSupply >= totalSupply(tokenId), "Max supply less than current supply");
+        require(
+            maxSupply >= totalSupply(tokenId),
+            "Max supply less than current supply"
+        );
         _validatePhaseTimes(whitelistStartTime, publicStartTime);
 
         config.maxSupply = maxSupply;
@@ -190,7 +231,10 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         }
 
         if (wlStart == 0) {
-            return block.timestamp < pubStart ? MintPhase.NotStarted : MintPhase.Public;
+            return
+                block.timestamp < pubStart
+                    ? MintPhase.NotStarted
+                    : MintPhase.Public;
         }
 
         if (block.timestamp < wlStart) {
@@ -247,20 +291,36 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
     /**
      * @dev Set whitelist Merkle root
      */
-    function setMerkleRoot(uint256 tokenId, bytes32 _merkleRoot) external onlyRole(ADMIN_ROLE) {
+    function setMerkleRoot(
+        uint256 tokenId,
+        bytes32 _merkleRoot
+    ) external onlyRole(ADMIN_ROLE) {
         require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
         TokenConfig storage config = tokenConfigs[tokenId];
-        require(block.timestamp < config.whitelistStartTime || config.whitelistStartTime == 0, "Whitelist started");
+        require(
+            block.timestamp < config.whitelistStartTime ||
+                config.whitelistStartTime == 0,
+            "Whitelist started"
+        );
         tokenConfigs[tokenId].merkleRoot = _merkleRoot;
         emit MerkleRootUpdated(tokenId, _merkleRoot);
     }
 
-    function _validatePhaseTimes(uint256 whitelistStartTime, uint256 publicStartTime) internal pure {
+    function _validatePhaseTimes(
+        uint256 whitelistStartTime,
+        uint256 publicStartTime
+    ) internal pure {
         if (whitelistStartTime == 0) {
-            require(publicStartTime > 0, "Public start required when skipping whitelist");
+            require(
+                publicStartTime > 0,
+                "Public start required when skipping whitelist"
+            );
         }
         if (whitelistStartTime != 0 && publicStartTime != 0) {
-            require(publicStartTime > whitelistStartTime, "Public must be after whitelist");
+            require(
+                publicStartTime > whitelistStartTime,
+                "Public must be after whitelist"
+            );
         }
     }
 
@@ -276,31 +336,49 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         TokenConfig storage config = tokenConfigs[tokenId];
 
         require(!config.mintEnded, "Mint has permanently ended");
-        require(getCurrentPhase(tokenId) == MintPhase.Whitelist, "Not in whitelist phase");
+        require(
+            getCurrentPhase(tokenId) == MintPhase.Whitelist,
+            "Not in whitelist phase"
+        );
         require(amount > 0, "Amount must be greater than 0");
         require(config.whitelistStartTime > 0, "Whitelist not scheduled");
-        require(block.timestamp >= config.whitelistStartTime, "Whitelist not started");
+        require(
+            block.timestamp >= config.whitelistStartTime,
+            "Whitelist not started"
+        );
         if (config.publicStartTime != 0) {
-            require(block.timestamp < config.publicStartTime, "Whitelist phase ended");
+            require(
+                block.timestamp < config.publicStartTime,
+                "Whitelist phase ended"
+            );
         }
         require(
-            whitelistMinted[tokenId][msg.sender] + amount <= config.whitelistMaxPerAddress,
+            whitelistMinted[tokenId][msg.sender] + amount <=
+                config.whitelistMaxPerAddress,
             "Exceeds whitelist allocation"
         );
-        require(totalSupply(tokenId) + amount <= config.maxSupply, "Exceeds max supply");
+        require(
+            totalSupply(tokenId) + amount <= config.maxSupply,
+            "Exceeds max supply"
+        );
 
         uint256 totalPrice = config.whitelistPrice * amount;
         require(msg.value >= totalPrice, "Insufficient payment");
 
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
-        require(MerkleProof.verify(merkleProof, config.merkleRoot, leaf), "Invalid merkle proof");
+        require(
+            MerkleProof.verify(merkleProof, config.merkleRoot, leaf),
+            "Invalid merkle proof"
+        );
 
         whitelistMinted[tokenId][msg.sender] += amount;
 
         _mint(msg.sender, tokenId, amount, "");
 
         if (msg.value > totalPrice) {
-            (bool refundOk, ) = payable(msg.sender).call{value: msg.value - totalPrice}("");
+            (bool refundOk, ) = payable(msg.sender).call{
+                value: msg.value - totalPrice
+            }("");
             require(refundOk, "Refund failed");
         }
 
@@ -315,15 +393,25 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         TokenConfig storage config = tokenConfigs[tokenId];
 
         require(!config.mintEnded, "Mint has permanently ended");
-        require(getCurrentPhase(tokenId) == MintPhase.Public, "Not in public phase");
+        require(
+            getCurrentPhase(tokenId) == MintPhase.Public,
+            "Not in public phase"
+        );
         require(amount > 0, "Amount must be greater than 0");
         require(config.publicStartTime > 0, "Public not scheduled");
-        require(block.timestamp >= config.publicStartTime, "Public not started");
         require(
-            publicMinted[tokenId][msg.sender] + amount <= config.publicMaxPerAddress,
+            block.timestamp >= config.publicStartTime,
+            "Public not started"
+        );
+        require(
+            publicMinted[tokenId][msg.sender] + amount <=
+                config.publicMaxPerAddress,
             "Exceeds public allocation"
         );
-        require(totalSupply(tokenId) + amount <= config.maxSupply, "Exceeds max supply");
+        require(
+            totalSupply(tokenId) + amount <= config.maxSupply,
+            "Exceeds max supply"
+        );
 
         uint256 totalPrice = config.publicPrice * amount;
         require(msg.value >= totalPrice, "Insufficient payment");
@@ -333,7 +421,9 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         _mint(msg.sender, tokenId, amount, "");
 
         if (msg.value > totalPrice) {
-            (bool refundOk, ) = payable(msg.sender).call{value: msg.value - totalPrice}("");
+            (bool refundOk, ) = payable(msg.sender).call{
+                value: msg.value - totalPrice
+            }("");
             require(refundOk, "Refund failed");
         }
 
@@ -375,7 +465,9 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
     /**
      * @dev Set base URI
      */
-    function setBaseURI(string memory newBaseURI) external onlyRole(ADMIN_ROLE) {
+    function setBaseURI(
+        string memory newBaseURI
+    ) external onlyRole(ADMIN_ROLE) {
         _baseTokenURI = newBaseURI;
         _setURI(newBaseURI);
         emit BaseURIUpdated(newBaseURI);
@@ -384,7 +476,10 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
     /**
      * @dev Set per-token URI override
      */
-    function setTokenURI(uint256 tokenId, string memory newURI) external onlyRole(ADMIN_ROLE) {
+    function setTokenURI(
+        uint256 tokenId,
+        string memory newURI
+    ) external onlyRole(ADMIN_ROLE) {
         require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
         _tokenURIs[tokenId] = newURI;
         emit TokenURIUpdated(tokenId, newURI);
@@ -399,7 +494,10 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         if (bytes(overrideURI).length > 0) {
             return overrideURI;
         }
-        return string(abi.encodePacked(_baseTokenURI, tokenId.toString(), ".json"));
+        return
+            string(
+                abi.encodePacked(_baseTokenURI, tokenId.toString(), ".json")
+            );
     }
 
     /**
@@ -418,27 +516,26 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
     /**
      * @dev Remaining whitelist allocation for an address
      */
-    function whitelistRemainingForAddress(uint256 tokenId, address account)
-        external
-        view
-        returns (uint256)
-    {
+    function whitelistRemainingForAddress(
+        uint256 tokenId,
+        address account
+    ) external view returns (uint256) {
         require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
         if (getCurrentPhase(tokenId) != MintPhase.Whitelist) {
             return 0;
         }
         TokenConfig storage config = tokenConfigs[tokenId];
-        return config.whitelistMaxPerAddress - whitelistMinted[tokenId][account];
+        return
+            config.whitelistMaxPerAddress - whitelistMinted[tokenId][account];
     }
 
     /**
      * @dev Remaining public allocation for an address
      */
-    function publicRemainingForAddress(uint256 tokenId, address account)
-        external
-        view
-        returns (uint256)
-    {
+    function publicRemainingForAddress(
+        uint256 tokenId,
+        address account
+    ) external view returns (uint256) {
         require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
         if (getCurrentPhase(tokenId) != MintPhase.Public) {
             return 0;
@@ -456,14 +553,21 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         bytes32[][] calldata merkleProofs
     ) external view returns (bool[] memory) {
         require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
-        require(accounts.length == merkleProofs.length, "Arrays length mismatch");
+        require(
+            accounts.length == merkleProofs.length,
+            "Arrays length mismatch"
+        );
 
         TokenConfig storage config = tokenConfigs[tokenId];
         bool[] memory results = new bool[](accounts.length);
 
         for (uint256 i = 0; i < accounts.length; i++) {
             bytes32 leaf = keccak256(abi.encodePacked(accounts[i]));
-            results[i] = MerkleProof.verify(merkleProofs[i], config.merkleRoot, leaf);
+            results[i] = MerkleProof.verify(
+                merkleProofs[i],
+                config.merkleRoot,
+                leaf
+            );
         }
 
         return results;
@@ -472,19 +576,25 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
     /**
      * @dev Token detail view
      */
-    function getTokenInfo(uint256 tokenId) external view returns (
-        string memory upgradeName,
-        uint256 maxSupply,
-        uint256 currentSupply,
-        uint256 whitelistMaxPerAddress,
-        uint256 publicMaxPerAddress,
-        uint256 whitelistPrice,
-        uint256 publicPrice,
-        MintPhase phase,
-        bool ended,
-        uint256 mintEndTime,
-        bool transferable
-    ) {
+    function getTokenInfo(
+        uint256 tokenId
+    )
+        external
+        view
+        returns (
+            string memory upgradeName,
+            uint256 maxSupply,
+            uint256 currentSupply,
+            uint256 whitelistMaxPerAddress,
+            uint256 publicMaxPerAddress,
+            uint256 whitelistPrice,
+            uint256 publicPrice,
+            MintPhase phase,
+            bool ended,
+            uint256 mintEndTime,
+            bool transferable
+        )
+    {
         require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
         TokenConfig storage config = tokenConfigs[tokenId];
 
@@ -503,7 +613,13 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         );
     }
 
-    function getPhaseTimes(uint256 tokenId) external view returns (uint256 whitelistStartTime, uint256 publicStartTime) {
+    function getPhaseTimes(
+        uint256 tokenId
+    )
+        external
+        view
+        returns (uint256 whitelistStartTime, uint256 publicStartTime)
+    {
         require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
         TokenConfig storage config = tokenConfigs[tokenId];
         return (config.whitelistStartTime, config.publicStartTime);
@@ -517,7 +633,10 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
     ) internal override(ERC1155, ERC1155Supply) {
         if (from != address(0) && to != address(0)) {
             for (uint256 i = 0; i < ids.length; i++) {
-                require(tokenConfigs[ids[i]].transferable, "Transfers disabled");
+                require(
+                    tokenConfigs[ids[i]].transferable,
+                    "Transfers disabled"
+                );
             }
         }
 
@@ -527,12 +646,9 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
     /**
      * @dev supportsInterface for AccessControl and ERC1155
      */
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC1155, AccessControl)
-        returns (bool)
-    {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view override(ERC1155, AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
