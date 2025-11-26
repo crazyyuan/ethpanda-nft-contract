@@ -2,7 +2,46 @@
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
+import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {MemoryOfEthereumNFT} from "../src/MemoryOfEthereumNFT.sol";
+
+contract RefundReverter is IERC1155Receiver {
+    function buyPublic(address payable nftAddr, uint256 tokenId) external payable {
+        MemoryOfEthereumNFT(nftAddr).publicMint{value: msg.value}(tokenId, 1);
+    }
+
+    receive() external payable {
+        revert();
+    }
+
+    fallback() external payable {
+        revert();
+    }
+
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return this.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] calldata,
+        uint256[] calldata,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return this.onERC1155BatchReceived.selector;
+    }
+
+    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
+        return interfaceId == type(IERC1155Receiver).interfaceId;
+    }
+}
 
 contract MemoryOfEthereumNFTTest is Test {
     MemoryOfEthereumNFT public nft;
@@ -455,6 +494,17 @@ contract MemoryOfEthereumNFTTest is Test {
         nft.updateTokenConfig(999, 10000, 5, 1, 0, 0, 0, 0);
     }
 
+    function testPhaseTimeValidationOrdering() public {
+        uint256 nowTs = block.timestamp;
+        vm.expectRevert("Public must be after whitelist");
+        nft.createToken("BadOrder", 100, 1, 1, 0, 0, nowTs + 2 days, nowTs + 1 days, true);
+    }
+
+    function testPhaseTimeValidationSkipWhitelistRequiresPublic() public {
+        vm.expectRevert("Public start required when skipping whitelist");
+        nft.createToken("MissingPublic", 100, 1, 1, 0, 0, 0, 0, true);
+    }
+
     // ========== 管理员功能测试 ==========
 
     function testAddAdmin() public {
@@ -525,6 +575,16 @@ contract MemoryOfEthereumNFTTest is Test {
             tokenId1
         );
         assertEq(whitelistPrice, price);
+    }
+
+    function testSetMerkleRootBlockedAfterWhitelistStart() public {
+        uint256 nowTs = block.timestamp;
+        uint256 wlStart = nowTs + 10;
+        uint256 pubStart = wlStart + 10;
+        uint256 newId = nft.createToken("Timelock", 100, 1, 1, 0, 0, wlStart, pubStart, true);
+        vm.warp(wlStart + 1);
+        vm.expectRevert("Whitelist started");
+        nft.setMerkleRoot(newId, bytes32(uint256(123)));
     }
 
     function testStartPublicPhase() public {
@@ -723,6 +783,17 @@ contract MemoryOfEthereumNFTTest is Test {
         uint256 balanceAfter = user1.balance;
         assertEq(balanceBefore - balanceAfter, totalPrice);
         assertEq(address(nft).balance, totalPrice);
+    }
+
+    function testRefundFailsWhenReceiverReverts() public {
+        uint256 nowTs = block.timestamp;
+        uint256 tokenId = nft.createToken("RefundTest", 100, 1, 1, 0, 0, 0, nowTs + 1, true);
+        _setConfig(tokenId, type(uint256).max, type(uint256).max, 0, nowTs + 1);
+        vm.warp(nowTs + 2);
+
+        RefundReverter buyer = new RefundReverter();
+        vm.expectRevert("Refund failed");
+        buyer.buyPublic{value: 1 ether}(payable(address(nft)), tokenId);
     }
 
     function testWhitelistMintInsufficientPayment() public {
@@ -1083,6 +1154,15 @@ contract MemoryOfEthereumNFTTest is Test {
         nft.withdraw(payable(admin));
     }
 
+    function testWithdrawZeroAddressReverts() public {
+        _startWhitelist(tokenId1, 0.01 ether);
+        vm.prank(user1);
+        nft.whitelistMint{value: 0.01 ether}(tokenId1, 1, merkleProof1);
+
+        vm.expectRevert("Invalid recipient");
+        nft.withdraw(payable(address(0)));
+    }
+
     // ========== End Mint 测试 ==========
 
     function testEndMintPermanently() public {
@@ -1207,6 +1287,13 @@ contract MemoryOfEthereumNFTTest is Test {
         assertEq(nft.uri(tokenId1), customURI);
     }
 
+    function testSetBaseURIAppliesWhenNoOverride() public {
+        string memory newBase = "https://new.example.com/meta/";
+        nft.setBaseURI(newBase);
+        string memory expectedURI = string(abi.encodePacked(newBase, "1.json"));
+        assertEq(nft.uri(tokenId1), expectedURI);
+    }
+
     // ========== 其他测试 ==========
 
     function testBurn() public {
@@ -1235,6 +1322,30 @@ contract MemoryOfEthereumNFTTest is Test {
 
         assertEq(nft.balanceOf(user1, tokenId1), 7);
         assertEq(nft.balanceOf(user2, tokenId1), 3);
+    }
+
+    function testBatchTransferBlocksNonTransferable() public {
+        uint256 nowTs = block.timestamp;
+        uint256 transferableId = tokenId1;
+        uint256 soulId = nft.createToken("Soul", 10, 5, 5, 0, 0, 0, nowTs + 1, false);
+        _setConfig(soulId, type(uint256).max, type(uint256).max, 0, nowTs + 1);
+        _startWhitelist(transferableId, 0);
+        vm.warp(nowTs + 2);
+        vm.startPrank(user1);
+        nft.whitelistMint(transferableId, 1, merkleProof1);
+        nft.publicMint(soulId, 1);
+        vm.stopPrank();
+
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = transferableId;
+        ids[1] = soulId;
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 1;
+        amounts[1] = 1;
+
+        vm.prank(user1);
+        vm.expectRevert("Transfers disabled");
+        nft.safeBatchTransferFrom(user1, user2, ids, amounts, "");
     }
 
     function testCompleteFlow() public {
@@ -1276,6 +1387,60 @@ contract MemoryOfEthereumNFTTest is Test {
 
         nft.withdraw(payable(admin));
         assertEq(address(nft).balance, 0);
+    }
+
+    function testRemainingSupplyZeroAfterEndMint() public {
+        _startWhitelist(tokenId1, 0);
+        vm.prank(user1);
+        nft.whitelistMint(tokenId1, 1, merkleProof1);
+        nft.endMintPermanently(tokenId1);
+        assertEq(nft.remainingSupply(tokenId1), 0);
+    }
+
+    function testWhitelistAndPublicRemainingHelpers() public {
+        // not in phase returns 0
+        assertEq(nft.whitelistRemainingForAddress(tokenId1, user1), 0);
+        assertEq(nft.publicRemainingForAddress(tokenId1, user1), 0);
+
+        _startWhitelist(tokenId1, 0);
+        assertEq(nft.whitelistRemainingForAddress(tokenId1, user1), 5);
+        vm.prank(user1);
+        nft.whitelistMint(tokenId1, 2, merkleProof1);
+        assertEq(nft.whitelistRemainingForAddress(tokenId1, user1), 3);
+
+        _startPublic(tokenId1, 0);
+        assertEq(nft.publicRemainingForAddress(tokenId1, user1), 1);
+        vm.prank(user1);
+        nft.publicMint(tokenId1, 1);
+        assertEq(nft.publicRemainingForAddress(tokenId1, user1), 0);
+    }
+
+    function testVerifyWhitelistArrayLengthMismatch() public {
+        address[] memory accounts = new address[](1);
+        accounts[0] = user1;
+        bytes32[][] memory proofs = new bytes32[][](2);
+        vm.expectRevert("Arrays length mismatch");
+        nft.verifyWhitelist(tokenId1, accounts, proofs);
+    }
+
+    function testVerifyWhitelistBatch() public view {
+        address[] memory accounts = new address[](2);
+        accounts[0] = user1;
+        accounts[1] = user3;
+        bytes32[][] memory proofs = new bytes32[][](2);
+        proofs[0] = merkleProof1;
+        proofs[1] = new bytes32[](1);
+        proofs[1][0] = merkleProof1[0];
+        bool[] memory res = nft.verifyWhitelist(tokenId1, accounts, proofs);
+        assertTrue(res[0]);
+        assertFalse(res[1]);
+    }
+
+    function testGetPhaseTimesGetter() public view {
+        (uint256 wlStart, uint256 pubStart) = nft.getPhaseTimes(tokenId1);
+        uint256 nowTs = block.timestamp;
+        assertEq(wlStart, nowTs + 1 days);
+        assertEq(pubStart, nowTs + 2 days);
     }
 
     receive() external payable {}
