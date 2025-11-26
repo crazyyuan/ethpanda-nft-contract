@@ -36,7 +36,7 @@ Memory of Ethereum is an innovative NFT project that releases a unique NFT serie
 ### Permission Management
 
 - 👥 **Multi-Admin**: Based on OpenZeppelin AccessControl
-- 🧭 **Owner as Root**: Deployer is owner; owner and admins can add/remove admins
+- 🧭 **Owner as Root**: Deployer is owner; only owner can add/remove admins
 - ⚡ **Flexible Operations**: Support dynamic admin add/remove
 
 ## 📋 Tech Stack

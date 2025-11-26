@@ -527,12 +527,16 @@ contract MemoryOfEthereumNFTTest is Test {
     }
 
     function testAdminCanManageAdmins() public {
-        // admin (address(this)) can add/remove admins
         nft.addAdmin(admin2);
         assertTrue(nft.hasRole(ADMIN_ROLE, admin2));
 
+        vm.prank(admin2);
+        vm.expectRevert("Not owner");
+        nft.addAdmin(user1);
+
+        vm.prank(admin2);
+        vm.expectRevert("Not owner");
         nft.removeAdmin(admin2);
-        assertFalse(nft.hasRole(ADMIN_ROLE, admin2));
     }
 
     function testOwnerCanTransferAndManageAdmins() public {

@@ -51,17 +51,17 @@ contract MemoryOfEthereumNFT is
     }
 
     struct TokenConfig {
-        uint256 maxSupply;
-        uint256 whitelistMaxPerAddress;
-        uint256 publicMaxPerAddress;
-        uint256 whitelistPrice;
-        uint256 publicPrice;
-        bytes32 merkleRoot;
-        uint256 whitelistStartTime;
-        uint256 publicStartTime;
+        uint128 maxSupply;
+        uint64 whitelistMaxPerAddress;
+        uint64 publicMaxPerAddress;
+        uint96 whitelistPrice;
+        uint96 publicPrice;
+        uint64 whitelistStartTime;
+        uint64 publicStartTime;
+        uint64 mintEndTime;
         bool mintEnded;
-        uint256 mintEndTime;
         bool transferable;
+        bytes32 merkleRoot;
         string upgradeName; // e.g. "Shapella", "Dencun"
     }
 
@@ -145,26 +145,26 @@ contract MemoryOfEthereumNFT is
         uint256 publicStartTime,
         bool transferable
     ) external onlyRole(ADMIN_ROLE) returns (uint256) {
-        require(maxSupply > 0, "Max supply must be greater than 0");
-        require(
-            whitelistMaxPerAddress > 0,
-            "Whitelist max must be greater than 0"
-        );
-        require(publicMaxPerAddress > 0, "Public max must be greater than 0");
+        require(maxSupply > 0 && maxSupply <= type(uint128).max, "Invalid max supply");
+        require(whitelistMaxPerAddress > 0 && whitelistMaxPerAddress <= type(uint64).max, "Whitelist max must be greater than 0");
+        require(publicMaxPerAddress > 0 && publicMaxPerAddress <= type(uint64).max, "Public max must be greater than 0");
+        require(whitelistPrice <= type(uint96).max, "Whitelist price too large");
+        require(publicPrice <= type(uint96).max, "Public price too large");
+        require(whitelistStartTime <= type(uint64).max && publicStartTime <= type(uint64).max, "Timestamp overflow");
         _validatePhaseTimes(whitelistStartTime, publicStartTime);
 
         currentTokenId++;
         uint256 newTokenId = currentTokenId;
 
         tokenConfigs[newTokenId] = TokenConfig({
-            maxSupply: maxSupply,
-            whitelistMaxPerAddress: whitelistMaxPerAddress,
-            publicMaxPerAddress: publicMaxPerAddress,
-            whitelistPrice: whitelistPrice,
-            publicPrice: publicPrice,
+            maxSupply: uint128(maxSupply),
+            whitelistMaxPerAddress: uint64(whitelistMaxPerAddress),
+            publicMaxPerAddress: uint64(publicMaxPerAddress),
+            whitelistPrice: uint96(whitelistPrice),
+            publicPrice: uint96(publicPrice),
             merkleRoot: bytes32(0),
-            whitelistStartTime: whitelistStartTime,
-            publicStartTime: publicStartTime,
+            whitelistStartTime: uint64(whitelistStartTime),
+            publicStartTime: uint64(publicStartTime),
             mintEnded: false,
             mintEndTime: 0,
             transferable: transferable,
@@ -191,19 +191,22 @@ contract MemoryOfEthereumNFT is
         require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
         TokenConfig storage config = tokenConfigs[tokenId];
         require(!config.mintEnded, "Token mint has ended");
-        require(
-            maxSupply >= totalSupply(tokenId),
-            "Max supply less than current supply"
-        );
+        require(maxSupply > 0 && maxSupply <= type(uint128).max, "Invalid max supply");
+        require(maxSupply >= totalSupply(tokenId), "Max supply less than current supply");
+        require(whitelistMaxPerAddress > 0 && whitelistMaxPerAddress <= type(uint64).max, "Whitelist max must be greater than 0");
+        require(publicMaxPerAddress > 0 && publicMaxPerAddress <= type(uint64).max, "Public max must be greater than 0");
+        require(whitelistPrice <= type(uint96).max, "Whitelist price too large");
+        require(publicPrice <= type(uint96).max, "Public price too large");
+        require(whitelistStartTime <= type(uint64).max && publicStartTime <= type(uint64).max, "Timestamp overflow");
         _validatePhaseTimes(whitelistStartTime, publicStartTime);
 
-        config.maxSupply = maxSupply;
-        config.whitelistMaxPerAddress = whitelistMaxPerAddress;
-        config.publicMaxPerAddress = publicMaxPerAddress;
-        config.whitelistPrice = whitelistPrice;
-        config.publicPrice = publicPrice;
-        config.whitelistStartTime = whitelistStartTime;
-        config.publicStartTime = publicStartTime;
+        config.maxSupply = uint128(maxSupply);
+        config.whitelistMaxPerAddress = uint64(whitelistMaxPerAddress);
+        config.publicMaxPerAddress = uint64(publicMaxPerAddress);
+        config.whitelistPrice = uint96(whitelistPrice);
+        config.publicPrice = uint96(publicPrice);
+        config.whitelistStartTime = uint64(whitelistStartTime);
+        config.publicStartTime = uint64(publicStartTime);
         // mintEndTime stays unchanged; endMintPermanently sets it.
 
         emit TokenConfigUpdated(tokenId);
@@ -256,15 +259,10 @@ contract MemoryOfEthereumNFT is
         owner = newOwner;
     }
 
-    function _isAdminManager(address account) internal view returns (bool) {
-        return account == owner || hasRole(ADMIN_ROLE, account);
-    }
-
     /**
      * @dev Add a new admin
      */
-    function addAdmin(address account) external {
-        require(_isAdminManager(msg.sender), "Not authorized to manage admins");
+    function addAdmin(address account) external onlyOwner {
         _grantRole(ADMIN_ROLE, account);
         emit AdminAdded(account);
     }
@@ -272,8 +270,7 @@ contract MemoryOfEthereumNFT is
     /**
      * @dev Remove an admin
      */
-    function removeAdmin(address account) external {
-        require(_isAdminManager(msg.sender), "Not authorized to manage admins");
+    function removeAdmin(address account) external onlyOwner {
         _revokeRole(ADMIN_ROLE, account);
         emit AdminRemoved(account);
     }
@@ -355,11 +352,11 @@ contract MemoryOfEthereumNFT is
             "Exceeds whitelist allocation"
         );
         require(
-            totalSupply(tokenId) + amount <= config.maxSupply,
+            totalSupply(tokenId) + amount <= uint256(config.maxSupply),
             "Exceeds max supply"
         );
 
-        uint256 totalPrice = config.whitelistPrice * amount;
+        uint256 totalPrice = uint256(config.whitelistPrice) * amount;
         require(msg.value >= totalPrice, "Insufficient payment");
 
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
@@ -406,11 +403,11 @@ contract MemoryOfEthereumNFT is
             "Exceeds public allocation"
         );
         require(
-            totalSupply(tokenId) + amount <= config.maxSupply,
+            totalSupply(tokenId) + amount <= uint256(config.maxSupply),
             "Exceeds max supply"
         );
 
-        uint256 totalPrice = config.publicPrice * amount;
+        uint256 totalPrice = uint256(config.publicPrice) * amount;
         require(msg.value >= totalPrice, "Insufficient payment");
 
         publicMinted[tokenId][msg.sender] += amount;
@@ -436,9 +433,10 @@ contract MemoryOfEthereumNFT is
         require(!config.mintEnded, "Mint already ended");
 
         uint256 currentSupply = totalSupply(tokenId);
+        require(block.timestamp <= type(uint64).max, "Timestamp overflow");
         config.mintEnded = true;
-        config.mintEndTime = block.timestamp;
-        config.maxSupply = currentSupply; // lock maxSupply to minted amount (burn unminted quota)
+        config.mintEndTime = uint64(block.timestamp);
+        config.maxSupply = uint128(currentSupply); // lock maxSupply to minted amount (burn unminted quota)
 
         emit MintPermanentlyEnded(tokenId, config.mintEndTime);
     }
@@ -505,7 +503,7 @@ contract MemoryOfEthereumNFT is
         if (config.mintEnded) {
             return 0;
         }
-        return config.maxSupply - totalSupply(tokenId);
+        return uint256(config.maxSupply) - totalSupply(tokenId);
     }
 
     /**
@@ -521,7 +519,8 @@ contract MemoryOfEthereumNFT is
         }
         TokenConfig storage config = tokenConfigs[tokenId];
         return
-            config.whitelistMaxPerAddress - whitelistMinted[tokenId][account];
+            uint256(config.whitelistMaxPerAddress) -
+            whitelistMinted[tokenId][account];
     }
 
     /**
@@ -536,7 +535,7 @@ contract MemoryOfEthereumNFT is
             return 0;
         }
         TokenConfig storage config = tokenConfigs[tokenId];
-        return config.publicMaxPerAddress - publicMinted[tokenId][account];
+        return uint256(config.publicMaxPerAddress) - publicMinted[tokenId][account];
     }
 
     /**
@@ -595,15 +594,15 @@ contract MemoryOfEthereumNFT is
 
         return (
             config.upgradeName,
-            config.maxSupply,
+            uint256(config.maxSupply),
             totalSupply(tokenId),
-            config.whitelistMaxPerAddress,
-            config.publicMaxPerAddress,
-            config.whitelistPrice,
-            config.publicPrice,
+            uint256(config.whitelistMaxPerAddress),
+            uint256(config.publicMaxPerAddress),
+            uint256(config.whitelistPrice),
+            uint256(config.publicPrice),
             getCurrentPhase(tokenId),
             config.mintEnded,
-            config.mintEndTime,
+            uint256(config.mintEndTime),
             config.transferable
         );
     }
@@ -617,7 +616,7 @@ contract MemoryOfEthereumNFT is
     {
         require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
         TokenConfig storage config = tokenConfigs[tokenId];
-        return (config.whitelistStartTime, config.publicStartTime);
+        return (uint256(config.whitelistStartTime), uint256(config.publicStartTime));
     }
 
     function _update(
@@ -627,11 +626,15 @@ contract MemoryOfEthereumNFT is
         uint256[] memory values
     ) internal override(ERC1155, ERC1155Supply) {
         if (from != address(0) && to != address(0)) {
-            for (uint256 i = 0; i < ids.length; i++) {
+            uint256 len = ids.length;
+            for (uint256 i = 0; i < len; ) {
                 require(
                     tokenConfigs[ids[i]].transferable,
                     "Transfers disabled"
                 );
+                unchecked {
+                    ++i;
+                }
             }
         }
 

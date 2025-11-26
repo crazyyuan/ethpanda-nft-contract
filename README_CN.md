@@ -36,7 +36,7 @@ Memory of Ethereum 是一个创新的 NFT 项目，每次以太坊重大升级�
 ### 权限管理
 
 - 👥 **多管理员**: 基于 OpenZeppelin AccessControl
-- 🧭 **Owner 总控**: 部署者为 owner；owner 和管理员都可管理管理员
+- 🧭 **Owner 总控**: 部署者为 owner；只有 owner 可管理管理员
 - ⚡ **灵活操作**: 支持动态添加/移除管理员
 
 ## 📋 技术栈
