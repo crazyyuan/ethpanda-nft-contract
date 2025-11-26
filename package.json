@@ -10,8 +10,8 @@
     "deploy:local": "forge script script/Deploy.s.sol:DeployScript --rpc-url http://localhost:8545 --broadcast",
     "deploy:sepolia": "source .env && forge script script/Deploy.s.sol:DeployScript --rpc-url sepolia --broadcast --verify -vvvv",
     "deploy:mainnet": "source .env && forge script script/Deploy.s.sol:DeployScript --rpc-url mainnet --broadcast --verify -vvvv",
-    "verify:sepolia": "source .env && forge verify-contract $CONTRACT_ADDRESS MemoryOfEthereumNFT --constructor-args $(cast abi-encode \"constructor(string,string,string,address)\" \"Memory of Ethereum\" \"Fusaka\" \"$BASE_URI\" \"$DEFAULT_ADMIN\") --etherscan-api-key $ETHERSCAN_API_KEY --chain sepolia --watch",
-    "verify:mainnet": "source .env && forge verify-contract $CONTRACT_ADDRESS MemoryOfEthereumNFT --constructor-args $(cast abi-encode \"constructor(string,string,string,address)\" \"Memory of Ethereum\" \"Fusaka\" \"$BASE_URI\" \"$DEFAULT_ADMIN\") --etherscan-api-key $ETHERSCAN_API_KEY --chain mainnet --watch"
+    "verify:sepolia": "source .env && forge verify-contract $CONTRACT_ADDRESS MemoryOfEthereumNFT --constructor-args $(cast abi-encode \"constructor(string,string,string)\" \"Memory of Ethereum\" \"Fusaka\" \"$BASE_URI\") --etherscan-api-key $ETHERSCAN_API_KEY --chain sepolia --watch",
+    "verify:mainnet": "source .env && forge verify-contract $CONTRACT_ADDRESS MemoryOfEthereumNFT --constructor-args $(cast abi-encode \"constructor(string,string,string)\" \"Memory of Ethereum\" \"Fusaka\" \"$BASE_URI\") --etherscan-api-key $ETHERSCAN_API_KEY --chain mainnet --watch"
   },
   "keywords": [
     "nft",
