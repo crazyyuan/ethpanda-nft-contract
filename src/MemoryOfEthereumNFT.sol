@@ -249,6 +249,8 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
      */
     function setMerkleRoot(uint256 tokenId, bytes32 _merkleRoot) external onlyRole(ADMIN_ROLE) {
         require(tokenId > 0 && tokenId <= currentTokenId, "Invalid token ID");
+        TokenConfig storage config = tokenConfigs[tokenId];
+        require(block.timestamp < config.whitelistStartTime || config.whitelistStartTime == 0, "Whitelist started");
         tokenConfigs[tokenId].merkleRoot = _merkleRoot;
         emit MerkleRootUpdated(tokenId, _merkleRoot);
     }
@@ -298,7 +300,8 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         _mint(msg.sender, tokenId, amount, "");
 
         if (msg.value > totalPrice) {
-            payable(msg.sender).transfer(msg.value - totalPrice);
+            (bool refundOk, ) = payable(msg.sender).call{value: msg.value - totalPrice}("");
+            require(refundOk, "Refund failed");
         }
 
         emit WhitelistMint(tokenId, msg.sender, amount, totalPrice);
@@ -330,7 +333,8 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
         _mint(msg.sender, tokenId, amount, "");
 
         if (msg.value > totalPrice) {
-            payable(msg.sender).transfer(msg.value - totalPrice);
+            (bool refundOk, ) = payable(msg.sender).call{value: msg.value - totalPrice}("");
+            require(refundOk, "Refund failed");
         }
 
         emit PublicMint(tokenId, msg.sender, amount, totalPrice);
@@ -358,6 +362,7 @@ contract MemoryOfEthereumNFT is ERC1155, AccessControl, ERC1155Burnable, ERC1155
      * @dev Withdraw contract ETH
      */
     function withdraw(address payable to) external onlyRole(ADMIN_ROLE) {
+        require(to != address(0), "Invalid recipient");
         uint256 balance = address(this).balance;
         require(balance > 0, "No funds to withdraw");
 

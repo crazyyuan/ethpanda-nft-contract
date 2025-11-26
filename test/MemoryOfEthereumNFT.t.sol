@@ -1239,7 +1239,7 @@ contract MemoryOfEthereumNFTTest is Test {
 
     function testCompleteFlow() public {
         // 创建新 token（带价格）
-        uint256 nowTs = block.timestamp;
+        uint256 nowTs = block.timestamp + 1 hours;
         uint256 newTokenId = nft.createToken(
             "Fusaka",
             5000,
