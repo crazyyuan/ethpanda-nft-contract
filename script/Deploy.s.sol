@@ -11,7 +11,7 @@ import {MemoryOfEthereumNFT} from "../src/MemoryOfEthereumNFT.sol";
 contract DeployScript is Script {
     string constant NAME = "Memory of Ethereum";
     string constant SYMBOL = "MoE";
-    string constant BASE_URI = "https://apricot-embarrassed-locust-895.mypinata.cloud/ipfs/bafybeibbwkzoznk24jn3ulqm6xkn2iq5mjubphgmtwydidpdgmdtmm76ma/";
+    string constant BASE_URI = "https://eip.fun/api/upgrade/";
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -19,7 +19,11 @@ contract DeployScript is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        MemoryOfEthereumNFT nft = new MemoryOfEthereumNFT(NAME, SYMBOL, BASE_URI);
+        MemoryOfEthereumNFT nft = new MemoryOfEthereumNFT(
+            NAME,
+            SYMBOL,
+            BASE_URI
+        );
 
         console.log("=== MemoryOfEthereumNFT Deployed ===");
         console.log("Contract Address:", address(nft));
